@@ -3,19 +3,21 @@ package com.example.flutter_live2d
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Paint
 import android.view.MotionEvent
 import android.view.View
 import com.live2d.sdk.cubism.framework.CubismFramework
 import com.live2d.sdk.cubism.framework.model.CubismModel
-import com.live2d.sdk.cubism.framework.motion.CubismMotion
-import com.live2d.sdk.cubism.framework.rendering.CubismRenderer
+import com.live2d.sdk.cubism.framework.motion.ACubismMotion
+import com.live2d.sdk.cubism.framework.motion.ICubismMotionEventFunction
+import com.live2d.sdk.cubism.framework.rendering.android.CubismRenderer_Android
+import com.live2d.sdk.cubism.framework.math.CubismMatrix44
+import com.live2d.sdk.cubism.framework.motion.CubismMotionQueueManager
 
 class Live2DView(context: Context) : View(context) {
     private var model: CubismModel? = null
-    private var renderer: CubismRenderer? = null
-    private var motionManager: CubismMotionManager? = null
-    private var modelMatrix: CubismModelMatrix? = null
+    private var renderer: CubismRenderer_Android? = null
+    private var motionManager: CubismMotionQueueManager? = null
+    private var modelMatrix: CubismMatrix44? = null
     
     private var scale = 1.0f
     private var positionX = 0.0f
@@ -29,9 +31,9 @@ class Live2DView(context: Context) : View(context) {
     fun loadModel(modelPath: String) {
         // 实现模型加载逻辑
         model = CubismModel.loadModel(modelPath)
-        renderer = CubismRenderer.create(model)
-        motionManager = CubismMotionManager()
-        modelMatrix = CubismModelMatrix()
+        renderer = CubismRenderer_Android.create(model)
+        motionManager = CubismMotionQueueManager()
+        modelMatrix = CubismMatrix44()
         
         invalidate()
     }
