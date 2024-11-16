@@ -1,62 +1,90 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
 import 'package:flutter_live2d/flutter_live2d.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  final _flutterLive2dPlugin = FlutterLive2d();
-
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      platformVersion =
-          await _flutterLive2dPlugin.getPlatformVersion() ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
-        ),
+      home: Live2DDemo(),
+    );
+  }
+}
+
+class Live2DDemo extends StatefulWidget {
+  @override
+  _Live2DDemoState createState() => _Live2DDemoState();
+}
+
+class _Live2DDemoState extends State<Live2DDemo> {
+  @override
+  void initState() {
+    super.initState();
+    _initLive2D();
+  }
+
+  Future<void> _initLive2D() async {
+    try {
+      await FlutterLive2d.initLive2d();
+      // 假设模型文件放在assets/live2d/model.model3.json
+      await FlutterLive2d.loadModel("assets/live2d/model.model3.json");
+    } catch (e) {
+      print("Live2D初始化失败: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Live2D Demo')),
+      body: Stack(
+        children: [
+          // Live2D视图
+          Center(
+            child: Container(
+              width: 300,
+              height: 400,
+              child: AndroidView(
+                viewType: 'live2d_view',
+                creationParams: <String, dynamic>{},
+                creationParamsCodec: const StandardMessageCodec(),
+              ),
+            ),
+          ),
+
+          // 控制按钮
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () => FlutterLive2d.startMotion("idle", 0),
+                  child: Text('待机动作'),
+                ),
+                ElevatedButton(
+                  onPressed: () => FlutterLive2d.setExpression("smile"),
+                  child: Text('微笑表情'),
+                ),
+                ElevatedButton(
+                  onPressed: () => FlutterLive2d.setScale(1.5),
+                  child: Text('放大'),
+                ),
+                ElevatedButton(
+                  onPressed: () => FlutterLive2d.setScale(1.0),
+                  child: Text('还原'),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
