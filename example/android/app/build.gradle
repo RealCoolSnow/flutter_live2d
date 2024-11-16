@@ -42,3 +42,13 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.aar'])
+}
+
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
