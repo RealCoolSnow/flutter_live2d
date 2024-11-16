@@ -26,6 +26,7 @@ class Live2DView(context: Context) : GLSurfaceView(context), GLSurfaceView.Rende
     private var positionY = 0.0f
 
     init {
+        println("Live2DView: Initializing...")
         // 设置透明背景
         setEGLConfigChooser(8, 8, 8, 8, 16, 0)
         holder.setFormat(PixelFormat.TRANSLUCENT)
@@ -42,43 +43,52 @@ class Live2DView(context: Context) : GLSurfaceView(context), GLSurfaceView.Rende
         CubismFramework.startUp(option)
         CubismFramework.initialize()
 
-        // OpenGL ES 2.0设置必须在setRenderer之前
         setEGLContextClientVersion(2)
         setRenderer(this)
         renderMode = RENDERMODE_CONTINUOUSLY
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        // Initialize OpenGL with transparent background
-        GLES20.glClearColor(0f, 0f, 0f, 0f)
+        println("Live2DView: Surface created")
+        // Set texture sampling
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+
+        // Set transparency
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
-        
-        // 创建renderer
-        renderer = CubismRendererAndroid.create() as CubismRendererAndroid
+
+        // Initialize Cubism SDK framework
+        CubismFramework.initialize()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        println("Live2DView: Surface changed: $width x $height")
+        // Set drawing range
         GLES20.glViewport(0, 0, width, height)
-        
+
         // Initialize model matrix
         modelMatrix = CubismMatrix44.create()
         modelMatrix?.loadIdentity()
-        
+
         // Scale model to fit screen
-        val modelScale = height / 2.0f
-        modelMatrix?.scale(modelScale, modelScale)
-        
-        // Center model
-        modelMatrix?.translateX(width / 2.0f)
-        modelMatrix?.translateY(height / 2.0f)
+        if (model?.getModel()?.getCanvasWidth() ?: 0f > 1.0f && width < height) {
+            // For horizontal models in vertical windows, calculate scale from model width
+            modelMatrix?.scale(2.0f, 2.0f)
+            modelMatrix?.scale(1.0f, width.toFloat() / height.toFloat())
+        } else {
+            modelMatrix?.scale(height.toFloat() / width.toFloat(), 1.0f)
+        }
     }
 
     override fun onDrawFrame(gl: GL10?) {
-        // Clear buffer
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-        
+        // Clear screen
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
+        GLES20.glClearDepthf(1.0f)
+
         model?.let { model ->
+            println("Live2DView: Drawing frame")
             // Update model matrix
             modelMatrix?.let { matrix ->
                 matrix.loadIdentity()
@@ -89,10 +99,13 @@ class Live2DView(context: Context) : GLSurfaceView(context), GLSurfaceView.Rende
                 model.update()
                 model.draw(matrix)
             }
+        } ?: run {
+            println("Live2DView: No model to draw")
         }
     }
 
     fun loadModel(modelPath: String) {
+        println("Live2DView: Loading model: $modelPath")
         val model = Live2DModel(context)
         // Extract directory and filename from modelPath
         val lastSlash = modelPath.lastIndexOf('/')

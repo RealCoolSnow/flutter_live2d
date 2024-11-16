@@ -15,24 +15,35 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_live2d")
         channel.setMethodCallHandler(this)
         
-        // 注册Live2DView Factory
         viewFactory = Live2DViewFactory()
         flutterPluginBinding
             .platformViewRegistry
             .registerViewFactory("live2d_view", viewFactory!!)
+        println("FlutterLive2dPlugin: View factory registered")
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         val live2DView = viewFactory?.getCurrentView()
+        println("FlutterLive2dPlugin: Method called: ${call.method}")
         
         when (call.method) {
             "initLive2d" -> {
-                // 初始化Live2D
+                println("FlutterLive2dPlugin: Initializing Live2D")
                 result.success(null)
             }
             "loadModel" -> {
+                println("FlutterLive2dPlugin: Loading model")
                 val modelPath = call.argument<String>("modelPath")
-                modelPath?.let { live2DView?.loadModel(it) }
+                println("FlutterLive2dPlugin: Model path: $modelPath")
+                if (live2DView == null) {
+                    println("FlutterLive2dPlugin: Live2DView is null")
+                    result.error("NO_VIEW", "Live2DView not found", null)
+                    return
+                }
+                modelPath?.let { 
+                    live2DView.loadModel(it)
+                    println("FlutterLive2dPlugin: Model loaded")
+                }
                 result.success(null)
             }
             "setScale" -> {

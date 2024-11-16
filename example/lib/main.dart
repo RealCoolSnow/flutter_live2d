@@ -26,16 +26,23 @@ class _Live2DDemoState extends State<Live2DDemo> {
   @override
   void initState() {
     super.initState();
-    _initLive2D();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initLive2D();
+    });
   }
 
   Future<void> _initLive2D() async {
     try {
       await FlutterLive2d.initLive2d();
-      // 假设模型文件放在assets/live2d/model.model3.json
+      print("Live2D initialized");
+
+      await Future.delayed(Duration(milliseconds: 500));
+
       await FlutterLive2d.loadModel("assets/live2d/Hiyori/Hiyori.model3.json");
-    } catch (e) {
+      print("Model loaded");
+    } catch (e, stackTrace) {
       print("Live2D初始化失败: $e");
+      print("Stack trace: $stackTrace");
     }
   }
 
@@ -50,10 +57,14 @@ class _Live2DDemoState extends State<Live2DDemo> {
             child: Container(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height * 0.8,
+              color: Colors.grey[200],
               child: AndroidView(
                 viewType: 'live2d_view',
                 creationParams: <String, dynamic>{},
                 creationParamsCodec: const StandardMessageCodec(),
+                onPlatformViewCreated: (int id) {
+                  print("Platform view created: $id");
+                },
               ),
             ),
           ),

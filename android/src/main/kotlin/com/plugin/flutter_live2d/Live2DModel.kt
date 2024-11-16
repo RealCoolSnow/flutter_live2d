@@ -17,6 +17,7 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
     private var userTimeSeconds: Float = 0.0f
     
     fun loadAssets(dir: String, fileName: String) {
+        println("Live2DModel: Loading assets from dir: $dir, file: $fileName")
         modelHomeDirectory = dir
         val path = modelHomeDirectory + fileName
         
@@ -108,15 +109,18 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
 
     private fun createBuffer(path: String): ByteArray {
         return try {
-            // 添加flutter_assets前缀
             val assetPath = "flutter_assets/$path"
-            println("Loading file: $assetPath")
+            println("Live2DModel: Loading file: $assetPath")
+            context.assets.list("")?.forEach { 
+                println("Available asset: $it")
+            }
             context.assets.open(assetPath).use { inputStream ->
                 inputStream.readBytes()
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            println("Failed to load file: $path")
+            println("Live2DModel: Failed to load file: $path")
+            println("Live2DModel: Error: ${e.message}")
             ByteArray(0)
         }
     }
