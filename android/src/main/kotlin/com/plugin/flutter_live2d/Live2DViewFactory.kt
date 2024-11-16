@@ -1,4 +1,4 @@
-package com.example.flutter_live2d
+package com.plugin.flutter_live2d
 
 import android.content.Context
 import io.flutter.plugin.common.StandardMessageCodec
