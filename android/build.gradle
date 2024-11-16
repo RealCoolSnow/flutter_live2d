@@ -69,5 +69,5 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation files('../sdk/CubismSdkForJava/Core/android/Live2DCubismCore.aar')
+    compileOnly(fileTree(dir: '../sdk/CubismSdkForJava/Core/android/', include: ['Live2DCubismCore.aar']))
 }
