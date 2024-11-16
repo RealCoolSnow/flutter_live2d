@@ -11,15 +11,33 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var channel : MethodChannel
     private var viewFactory: Live2DViewFactory? = null
 
+    init {
+        println("FlutterLive2dPlugin: Constructor called")
+    }
+
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_live2d")
-        channel.setMethodCallHandler(this)
+        println("FlutterLive2dPlugin: onAttachedToEngine start")
         
-        viewFactory = Live2DViewFactory()
-        flutterPluginBinding
-            .platformViewRegistry
-            .registerViewFactory("live2d_view", viewFactory!!)
-        println("FlutterLive2dPlugin: View factory registered")
+        try {
+            channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_live2d")
+            println("FlutterLive2dPlugin: Channel created")
+            
+            channel.setMethodCallHandler(this)
+            println("FlutterLive2dPlugin: Method handler set")
+            
+            viewFactory = Live2DViewFactory()
+            println("FlutterLive2dPlugin: View factory created")
+            
+            flutterPluginBinding
+                .platformViewRegistry
+                .registerViewFactory("live2d_view", viewFactory!!)
+            println("FlutterLive2dPlugin: View factory registered")
+        } catch (e: Exception) {
+            println("FlutterLive2dPlugin: Error in onAttachedToEngine")
+            e.printStackTrace()
+        }
+        
+        println("FlutterLive2dPlugin: onAttachedToEngine end")
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
