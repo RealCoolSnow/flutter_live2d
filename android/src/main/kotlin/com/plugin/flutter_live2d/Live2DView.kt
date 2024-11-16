@@ -31,11 +31,11 @@ class Live2DView(context: Context) : GLSurfaceView(context), GLSurfaceView.Rende
         
         // Initialize Cubism Framework
         val option = CubismFramework.Option()
-        // option.logFunction = object : ICubismLogger {
-        //     override fun print(message: String) {
-        //         println("Live2D: $message")
-        //     }
-        // }
+        option.logFunction = object : ICubismLogger {
+            override fun print(message: String) {
+                println("Live2D: $message")
+            }
+        }
         option.loggingLevel = LogLevel.VERBOSE
         
         CubismFramework.startUp(option)

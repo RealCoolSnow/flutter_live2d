@@ -33,7 +33,7 @@ class _Live2DDemoState extends State<Live2DDemo> {
     try {
       await FlutterLive2d.initLive2d();
       // 假设模型文件放在assets/live2d/model.model3.json
-      await FlutterLive2d.loadModel("assets/live2d/model.model3.json");
+      await FlutterLive2d.loadModel("assets/live2d/Hiyori/Hiyori.model3.json");
     } catch (e) {
       print("Live2D初始化失败: $e");
     }

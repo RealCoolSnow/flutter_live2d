@@ -86,3 +86,8 @@ flutter:
 
   assets:
     - assets/live2d/
+    - assets/live2d/Hiyori/
+    - assets/live2d/Hiyori/Hiyori.model3.json
+    - assets/live2d/Hiyori/Hiyori.physics3.json
+    - assets/live2d/Hiyori/Hiyori.2048/
+    - assets/live2d/Hiyori/motions/
