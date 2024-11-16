@@ -9,19 +9,22 @@ import io.flutter.plugin.common.MethodChannel.Result
 
 class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var channel : MethodChannel
-    private var live2DView: Live2DView? = null
+    private var viewFactory: Live2DViewFactory? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_live2d")
         channel.setMethodCallHandler(this)
         
         // 注册Live2DView Factory
+        viewFactory = Live2DViewFactory()
         flutterPluginBinding
             .platformViewRegistry
-            .registerViewFactory("live2d_view", Live2DViewFactory())
+            .registerViewFactory("live2d_view", viewFactory!!)
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+        val live2DView = viewFactory?.getCurrentView()
+        
         when (call.method) {
             "initLive2d" -> {
                 // 初始化Live2D

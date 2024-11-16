@@ -48,8 +48,8 @@ class _Live2DDemoState extends State<Live2DDemo> {
           // Live2D视图
           Center(
             child: Container(
-              width: 300,
-              height: 400,
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height * 0.8,
               child: AndroidView(
                 viewType: 'live2d_view',
                 creationParams: <String, dynamic>{},

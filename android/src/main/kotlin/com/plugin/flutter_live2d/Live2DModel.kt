@@ -1,5 +1,6 @@
 package com.plugin.flutter_live2d
 
+import android.content.Context
 import com.live2d.sdk.cubism.framework.CubismFramework
 import com.live2d.sdk.cubism.framework.CubismModelSettingJson
 import com.live2d.sdk.cubism.framework.ICubismModelSetting
@@ -10,7 +11,7 @@ import com.live2d.sdk.cubism.framework.math.CubismModelMatrix
 import com.live2d.sdk.cubism.framework.model.CubismUserModel
 import com.live2d.sdk.cubism.framework.rendering.android.CubismRendererAndroid
 
-class Live2DModel : CubismUserModel() {
+class Live2DModel(private val context: Context) : CubismUserModel() {
     private var modelSetting: ICubismModelSetting? = null
     private var modelHomeDirectory: String = ""
     private var userTimeSeconds: Float = 0.0f
@@ -106,8 +107,18 @@ class Live2DModel : CubismUserModel() {
     }
 
     private fun createBuffer(path: String): ByteArray {
-        // TODO: Implement file loading from assets
-        return ByteArray(0)
+        return try {
+            // 添加flutter_assets前缀
+            val assetPath = "flutter_assets/$path"
+            println("Loading file: $assetPath")
+            context.assets.open(assetPath).use { inputStream ->
+                inputStream.readBytes()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            println("Failed to load file: $path")
+            ByteArray(0)
+        }
     }
 
     private fun preLoadMotionGroup(group: String) {

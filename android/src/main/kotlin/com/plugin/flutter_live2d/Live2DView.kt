@@ -1,6 +1,7 @@
 package com.plugin.flutter_live2d
 
 import android.content.Context
+import android.graphics.PixelFormat
 import android.opengl.GLSurfaceView
 import android.view.MotionEvent
 import com.live2d.sdk.cubism.framework.CubismFramework
@@ -25,9 +26,9 @@ class Live2DView(context: Context) : GLSurfaceView(context), GLSurfaceView.Rende
     private var positionY = 0.0f
 
     init {
-        setEGLContextClientVersion(2)
-        setRenderer(this)
-        renderMode = RENDERMODE_CONTINUOUSLY
+        // 设置透明背景
+        setEGLConfigChooser(8, 8, 8, 8, 16, 0)
+        holder.setFormat(PixelFormat.TRANSLUCENT)
         
         // Initialize Cubism Framework
         val option = CubismFramework.Option()
@@ -40,13 +41,21 @@ class Live2DView(context: Context) : GLSurfaceView(context), GLSurfaceView.Rende
         
         CubismFramework.startUp(option)
         CubismFramework.initialize()
+
+        // OpenGL ES 2.0设置必须在setRenderer之前
+        setEGLContextClientVersion(2)
+        setRenderer(this)
+        renderMode = RENDERMODE_CONTINUOUSLY
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        // Initialize OpenGL
+        // Initialize OpenGL with transparent background
         GLES20.glClearColor(0f, 0f, 0f, 0f)
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
+        
+        // 创建renderer
+        renderer = CubismRendererAndroid.create() as CubismRendererAndroid
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -84,7 +93,7 @@ class Live2DView(context: Context) : GLSurfaceView(context), GLSurfaceView.Rende
     }
 
     fun loadModel(modelPath: String) {
-        val model = Live2DModel()
+        val model = Live2DModel(context)
         // Extract directory and filename from modelPath
         val lastSlash = modelPath.lastIndexOf('/')
         val dir = modelPath.substring(0, lastSlash + 1)
@@ -123,6 +132,11 @@ class Live2DView(context: Context) : GLSurfaceView(context), GLSurfaceView.Rende
     fun setPosition(x: Float, y: Float) {
         this.positionX = x
         this.positionY = y
+    }
+
+    // Add this public method for cleanup
+    fun cleanup() {
+        onDetachedFromWindow()
     }
 
     override fun onDetachedFromWindow() {
