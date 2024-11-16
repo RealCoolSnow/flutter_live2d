@@ -1,3 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.plugin.flutter_live2d">
+   <uses-feature
+    android:glEsVersion="0x00020000"
+    android:required="true"/>
 </manifest>
