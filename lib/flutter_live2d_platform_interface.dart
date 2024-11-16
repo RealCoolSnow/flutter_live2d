@@ -23,7 +23,27 @@ abstract class FlutterLive2dPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
+  Future<void> initLive2d() {
+    throw UnimplementedError('initLive2d() has not been implemented.');
+  }
+
+  Future<void> loadModel(String modelPath) {
+    throw UnimplementedError('loadModel() has not been implemented.');
+  }
+
+  Future<void> setScale(double scale) {
+    throw UnimplementedError('setScale() has not been implemented.');
+  }
+
+  Future<void> setPosition(double x, double y) {
+    throw UnimplementedError('setPosition() has not been implemented.');
+  }
+
+  Future<void> startMotion(String group, int index) {
+    throw UnimplementedError('startMotion() has not been implemented.');
+  }
+
+  Future<void> setExpression(String expression) {
+    throw UnimplementedError('setExpression() has not been implemented.');
   }
 }

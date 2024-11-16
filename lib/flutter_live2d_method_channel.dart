@@ -10,8 +10,36 @@ class MethodChannelFlutterLive2d extends FlutterLive2dPlatform {
   final methodChannel = const MethodChannel('flutter_live2d');
 
   @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
-    return version;
+  Future<void> initLive2d() async {
+    await methodChannel.invokeMethod('initLive2d');
+  }
+
+  @override
+  Future<void> loadModel(String modelPath) async {
+    await methodChannel.invokeMethod('loadModel', {'modelPath': modelPath});
+  }
+
+  @override
+  Future<void> setScale(double scale) async {
+    await methodChannel.invokeMethod('setScale', {'scale': scale});
+  }
+
+  @override
+  Future<void> setPosition(double x, double y) async {
+    await methodChannel.invokeMethod('setPosition', {'x': x, 'y': y});
+  }
+
+  @override
+  Future<void> startMotion(String group, int index) async {
+    await methodChannel.invokeMethod('startMotion', {
+      'group': group,
+      'index': index,
+    });
+  }
+
+  @override
+  Future<void> setExpression(String expression) async {
+    await methodChannel
+        .invokeMethod('setExpression', {'expression': expression});
   }
 }
