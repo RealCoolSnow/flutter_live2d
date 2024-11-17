@@ -7,6 +7,9 @@ import android.util.Log
 class LAppSpriteShader(private val context: Context) {
     companion object {
         private const val TAG = "LAppSpriteShader"
+        private const val SHADER_PATH = "Shaders"
+        private const val VERT_SHADER = "VertSprite.vert"
+        private const val FRAG_SHADER = "FragSprite.frag"
     }
 
     private var programId: Int = 0
@@ -32,123 +35,109 @@ class LAppSpriteShader(private val context: Context) {
     fun getShaderId(): Int = programId
 
     private fun createShader(): Int {
-        // 创建着色器
-        val vertShaderFile = "Shaders/VertSprite.vert"
-        val fragShaderFile = "Shaders/FragSprite.frag"
+        try {
+            // 编译顶点着色器
+            Log.d(TAG, "Compiling vertex shader...")
+            val vertShaderPath = "$SHADER_PATH/$VERT_SHADER"
+            Log.d(TAG, "Loading vertex shader from: $vertShaderPath")
+            val vertexShaderId = compileShader(vertShaderPath, GLES20.GL_VERTEX_SHADER)
+            if (vertexShaderId == 0) {
+                Log.e(TAG, "Failed to compile vertex shader")
+                return 0
+            }
 
-        // 编译着色器
-        val vertexShaderId = compileShader(vertShaderFile, GLES20.GL_VERTEX_SHADER)
-        val fragmentShaderId = compileShader(fragShaderFile, GLES20.GL_FRAGMENT_SHADER)
+            // 编译片段着色器
+            Log.d(TAG, "Compiling fragment shader...")
+            val fragShaderPath = "$SHADER_PATH/$FRAG_SHADER"
+            Log.d(TAG, "Loading fragment shader from: $fragShaderPath")
+            val fragmentShaderId = compileShader(fragShaderPath, GLES20.GL_FRAGMENT_SHADER)
+            if (fragmentShaderId == 0) {
+                GLES20.glDeleteShader(vertexShaderId)
+                Log.e(TAG, "Failed to compile fragment shader")
+                return 0
+            }
 
-        if (vertexShaderId == 0 || fragmentShaderId == 0) {
+            // 创建程序
+            val programId = GLES20.glCreateProgram()
+            if (programId == 0) {
+                Log.e(TAG, "Failed to create program")
+                return 0
+            }
+
+            // 附加着色器
+            GLES20.glAttachShader(programId, vertexShaderId)
+            GLES20.glAttachShader(programId, fragmentShaderId)
+
+            // 绑定属性位置 - 必须在链接之前
+            GLES20.glBindAttribLocation(programId, 0, "position")
+            GLES20.glBindAttribLocation(programId, 1, "uv")
+
+            // 链接程序
+            GLES20.glLinkProgram(programId)
+
+            // 检查链接状态
+            val linkStatus = IntArray(1)
+            GLES20.glGetProgramiv(programId, GLES20.GL_LINK_STATUS, linkStatus, 0)
+            if (linkStatus[0] != GLES20.GL_TRUE) {
+                val log = GLES20.glGetProgramInfoLog(programId)
+                Log.e(TAG, "Failed to link program: $log")
+                GLES20.glDeleteProgram(programId)
+                return 0
+            }
+
+            // 删除着色器
+            GLES20.glDeleteShader(vertexShaderId)
+            GLES20.glDeleteShader(fragmentShaderId)
+
+            return programId
+        } catch (e: Exception) {
+            Log.e(TAG, "Error creating shader program", e)
             return 0
         }
-
-        // 创建程序
-        val programId = GLES20.glCreateProgram()
-        if (programId == 0) {
-            Log.e(TAG, "Failed to create program")
-            return 0
-        }
-
-        // 附加着色器
-        GLES20.glAttachShader(programId, vertexShaderId)
-        GLES20.glAttachShader(programId, fragmentShaderId)
-
-        // 绑定属性位置 - 必须在链接之前
-        GLES20.glBindAttribLocation(programId, 0, "position")
-        GLES20.glBindAttribLocation(programId, 1, "uv")
-
-        // 链接程序
-        GLES20.glLinkProgram(programId)
-
-        // 检查链接状态
-        val linkStatus = IntArray(1)
-        GLES20.glGetProgramiv(programId, GLES20.GL_LINK_STATUS, linkStatus, 0)
-        if (linkStatus[0] != GLES20.GL_TRUE) {
-            val log = GLES20.glGetProgramInfoLog(programId)
-            Log.e(TAG, "Failed to link program: $log")
-            GLES20.glDeleteProgram(programId)
-            return 0
-        }
-
-        // 删除着色器
-        GLES20.glDeleteShader(vertexShaderId)
-        GLES20.glDeleteShader(fragmentShaderId)
-
-        return programId
     }
 
     private fun compileShader(fileName: String, shaderType: Int): Int {
         try {
-            // 打印文件名和着色器类型
-            println("LAppSpriteShader: Compiling shader - File: $fileName, Type: ${if (shaderType == GLES20.GL_VERTEX_SHADER) "Vertex" else "Fragment"}")
-            
-            // 尝试打开文件
-            println("LAppSpriteShader: Attempting to open shader file...")
-            val shaderBuffer = try {
-                context.assets.open(fileName).use { it.readBytes() }
-            } catch (e: Exception) {
-                println("LAppSpriteShader: Failed to open shader file: ${e.message}")
-                e.printStackTrace()
+            // 从assets加载着色器文件
+            Log.d(TAG, "Loading shader file: $fileName")
+            val shaderCode = context.assets.open(fileName).bufferedReader().use { it.readText() }
+            Log.d(TAG, "Shader code loaded:\n$shaderCode")
+
+            if (shaderCode.isEmpty()) {
+                Log.e(TAG, "Shader code is empty")
                 return 0
             }
-            
-            // 打印着色器代码
-            val shaderCode = String(shaderBuffer)
-            println("LAppSpriteShader: Shader code:\n$shaderCode")
 
             // 创建着色器
-            println("LAppSpriteShader: Creating shader...")
             val shaderId = GLES20.glCreateShader(shaderType)
             if (shaderId == 0) {
-                println("LAppSpriteShader: Failed to create shader object")
+                Log.e(TAG, "Failed to create shader type: $shaderType")
                 return 0
             }
-            println("LAppSpriteShader: Created shader with ID: $shaderId")
 
-            // 加载着色器源码
-            println("LAppSpriteShader: Loading shader source...")
+            // 加载着色器源码并编译
             GLES20.glShaderSource(shaderId, shaderCode)
-            
-            // 检查OpenGL错误
-            var error = GLES20.glGetError()
-            if (error != GLES20.GL_NO_ERROR) {
-                println("LAppSpriteShader: Error after loading shader source: $error")
-            }
-
-            // 编译着色器
-            println("LAppSpriteShader: Compiling shader...")
             GLES20.glCompileShader(shaderId)
-            
-            // 检查OpenGL错误
-            error = GLES20.glGetError()
-            if (error != GLES20.GL_NO_ERROR) {
-                println("LAppSpriteShader: Error after compiling shader: $error")
-            }
-
-            // 获取编译状态
-            val compileStatus = IntArray(1)
-            GLES20.glGetShaderiv(shaderId, GLES20.GL_COMPILE_STATUS, compileStatus, 0)
-            println("LAppSpriteShader: Compile status: ${compileStatus[0]}")
-
-            // 总是获取并打印编译日志
-            val log = GLES20.glGetShaderInfoLog(shaderId)
-            if (log.isNotEmpty()) {
-                println("LAppSpriteShader: Compilation log: $log")
-            }
 
             // 检查编译状态
+            val compileStatus = IntArray(1)
+            GLES20.glGetShaderiv(shaderId, GLES20.GL_COMPILE_STATUS, compileStatus, 0)
+
+            // 获取编译日志
+            val log = GLES20.glGetShaderInfoLog(shaderId)
+            if (log.isNotEmpty()) {
+                Log.d(TAG, "Shader compile log: $log")
+            }
+
             if (compileStatus[0] == GLES20.GL_FALSE) {
-                println("LAppSpriteShader: Shader compilation failed")
+                Log.e(TAG, "Shader compilation failed")
                 GLES20.glDeleteShader(shaderId)
                 return 0
             }
 
-            println("LAppSpriteShader: Shader compiled successfully")
             return shaderId
         } catch (e: Exception) {
-            println("LAppSpriteShader: Exception during shader compilation: ${e.message}")
+            Log.e(TAG, "Error loading shader file: ${e.message}")
             e.printStackTrace()
             return 0
         }
