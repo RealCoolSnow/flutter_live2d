@@ -52,7 +52,7 @@ class _Live2DDemoState extends State<Live2DDemo> {
       print("Live2DDemo: Delay completed");
 
       setState(() => _status = "加载模型...");
-      await FlutterLive2d.loadModel("assets/live2d/Hiyori/Hiyori.model3.json");
+      await FlutterLive2d.loadModel("assets/live2d/Mao/Mao.model3.json");
       print("Live2DDemo: Model loaded");
 
       setState(() {

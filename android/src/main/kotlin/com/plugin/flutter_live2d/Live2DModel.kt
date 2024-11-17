@@ -12,15 +12,22 @@ import com.live2d.sdk.cubism.framework.model.CubismUserModel
 import com.live2d.sdk.cubism.framework.rendering.android.CubismRendererAndroid
 import com.live2d.sdk.cubism.framework.id.CubismId
 import com.live2d.sdk.cubism.framework.utils.CubismDebug
+import com.live2d.sdk.cubism.framework.rendering.CubismRenderer
+import android.opengl.GLES20
 
 class Live2DModel(private val context: Context) : CubismUserModel() {
     private var modelSetting: ICubismModelSetting? = null
     private var modelHomeDirectory: String = ""
     private var userTimeSeconds: Float = 0.0f
-    private var modelMatrix: CubismModelMatrix? = null
-    private var scale = 1.0f
-    private var positionX = 0.0f
-    private var positionY = 0.0f
+    private var modelScale = 1.0f
+    private var modelPositionX = 0.0f
+    private var modelPositionY = 0.0f
+    private val userModelMatrix = CubismMatrix44.create()
+    private lateinit var textureManager: TextureManager
+
+    init {
+        textureManager = TextureManager(context)
+    }
 
     fun loadAssets(dir: String, fileName: String) {
         println("Live2DModel: Loading assets from dir: $dir, file: $fileName")
@@ -37,33 +44,51 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
             val modelPath = modelHomeDirectory + modelFileName
             val modelBuffer = createBuffer(modelPath)
             loadModel(modelBuffer)
-            
-            // Initialize model matrix after loading model
-            model?.let { model ->
-                modelMatrix = CubismModelMatrix.create(
-                    model.getCanvasWidth(),
-                    model.getCanvasHeight()
-                )
-            }
+            println("Live2DModel: Model loaded")
+
+            // Initialize user matrix
+            userModelMatrix.loadIdentity()
+            println("Live2DModel: Matrix initialized")
         }
         
         // Setup renderer
-        val renderer = CubismRendererAndroid.create()
-        setupRenderer(renderer)
+        setupRenderer(CubismRendererAndroid.create())
+        println("Live2DModel: Renderer setup")
         
-        // Setup eye blink
-        if (modelSetting?.eyeBlinkParameterCount ?: 0 > 0) {
-            eyeBlink = CubismEyeBlink.create(modelSetting)
+        // Setup textures
+        setupTextures()
+    }
+
+    private fun setupTextures() {
+        println("Live2DModel: Setting up textures")
+        try {
+            val renderer = getRenderer() as CubismRendererAndroid
+            
+            // 设置渲染器属性
+            renderer.isPremultipliedAlpha(true)
+            
+            for (modelTextureNumber in 0 until (modelSetting?.getTextureCount() ?: 0)) {
+                // 获取纹理路径
+                val texturePath = modelSetting?.getTextureFileName(modelTextureNumber)
+                if (texturePath.isNullOrEmpty()) {
+                    println("Live2DModel: Empty texture path for number $modelTextureNumber")
+                    continue
+                }
+
+                // 加载纹理
+                val fullPath = "flutter_assets/$modelHomeDirectory$texturePath"
+                println("Live2DModel: Loading texture: $fullPath")
+                
+                val textureInfo = textureManager.createTextureFromPngFile(fullPath)
+                renderer.bindTexture(modelTextureNumber, textureInfo.id)
+                println("Live2DModel: Texture $modelTextureNumber bound to GL texture ${textureInfo.id}")
+            }
+            
+            println("Live2DModel: All textures set up")
+        } catch (e: Exception) {
+            println("Live2DModel: Error setting up textures")
+            e.printStackTrace()
         }
-        
-        // Setup breath
-        breath = CubismBreath.create()
-        val breathParameters = ArrayList<CubismBreath.BreathParameterData>()
-        breathParameters.add(CubismBreath.BreathParameterData(CubismFramework.getIdManager().getId("ParamAngleX"), 0.0f, 15.0f, 6.5345f, 0.5f))
-        breathParameters.add(CubismBreath.BreathParameterData(CubismFramework.getIdManager().getId("ParamAngleY"), 0.0f, 8.0f, 3.5345f, 0.5f))
-        breathParameters.add(CubismBreath.BreathParameterData(CubismFramework.getIdManager().getId("ParamAngleZ"), 0.0f, 10.0f, 5.5345f, 0.5f))
-        breathParameters.add(CubismBreath.BreathParameterData(CubismFramework.getIdManager().getId("ParamBodyAngleX"), 0.0f, 4.0f, 15.5345f, 0.5f))
-        breath?.setParameters(breathParameters)
     }
 
     fun update() {
@@ -96,32 +121,42 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
     }
 
     fun draw(matrix: CubismMatrix44) {
-        if (model == null) {
-            return
+        println("Live2DModel: Drawing with matrix")
+        try {
+            val renderer = getRenderer() as? CubismRendererAndroid
+            if (renderer != null) {
+                // 合并用户矩阵和投影矩阵
+                val drawMatrix = CubismMatrix44.create()
+                CubismMatrix44.multiply(userModelMatrix.getArray(), matrix.getArray(), drawMatrix.getArray())
+                
+                // 设置MVP矩阵并绘制
+                renderer.setMvpMatrix(drawMatrix)
+                renderer.drawModel()
+                println("Live2DModel: Model drawn successfully")
+            } else {
+                println("Live2DModel: No renderer available")
+            }
+        } catch (e: Exception) {
+            println("Live2DModel: Error drawing model")
+            e.printStackTrace()
         }
-
-        // Update model matrix
-        modelMatrix?.let { modelMatrix ->
-            modelMatrix.loadIdentity()
-            modelMatrix.scale(scale, scale)
-            modelMatrix.translate(positionX, positionY)
-            
-            // Multiply matrices
-            CubismMatrix44.multiply(modelMatrix.getArray(), matrix.getArray(), matrix.getArray())
-        }
-
-        val renderer = getRenderer() as CubismRendererAndroid
-        renderer.setMvpMatrix(matrix)
-        renderer.drawModel()
     }
 
     fun setScale(scale: Float) {
-        this.scale = scale
+        modelScale = scale
+        updateModelMatrix()
     }
 
     fun setPosition(x: Float, y: Float) {
-        this.positionX = x
-        this.positionY = y
+        modelPositionX = x
+        modelPositionY = y
+        updateModelMatrix()
+    }
+
+    private fun updateModelMatrix() {
+        userModelMatrix.loadIdentity()
+        userModelMatrix.scale(modelScale, modelScale)
+        userModelMatrix.translate(modelPositionX, modelPositionY)
     }
 
     fun startMotion(group: String, index: Int, priority: Int = 0) {
@@ -161,19 +196,30 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
         return try {
             val assetPath = "flutter_assets/$path"
             println("Live2DModel: Loading file: $assetPath")
+            
+            // 列出可用的资源文件
+            context.assets.list("")?.forEach { 
+                println("Available asset root: $it")
+            }
+            context.assets.list("flutter_assets")?.forEach { 
+                println("Available asset in flutter_assets: $it")
+            }
+            
+            // 读取文件
             context.assets.open(assetPath).use { inputStream ->
-                inputStream.readBytes()
+                inputStream.readBytes().also { bytes ->
+                    println("Live2DModel: Successfully loaded ${bytes.size} bytes from $assetPath")
+                }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             println("Live2DModel: Failed to load file: $path")
-            println("Live2DModel: Error: ${e.message}")
+            e.printStackTrace()
             ByteArray(0)
         }
     }
 
-    override fun getModelMatrix(): CubismModelMatrix? {
-        return modelMatrix
+    override fun getModelMatrix(): CubismModelMatrix {
+        return getModelMatrix()
     }
 
     override fun setDragging(x: Float, y: Float) {
@@ -259,6 +305,26 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
             )
             // 强制更新
             model.update()
+        }
+    }
+
+    fun dispose() {
+        println("Live2DModel: Disposing...")
+        try {
+            // 放渲染器
+            (getRenderer() as? CubismRendererAndroid)?.close()
+            
+            // 释放模型资源
+            model?.close()
+            
+            // 清除引用
+            modelSetting = null
+            model = null
+            
+            println("Live2DModel: Disposed successfully")
+        } catch (e: Exception) {
+            println("Live2DModel: Error during disposal")
+            e.printStackTrace()
         }
     }
 } 

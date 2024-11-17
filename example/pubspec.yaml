@@ -88,7 +88,18 @@ flutter:
     - assets/live2d/
     - assets/live2d/Hiyori/
     - assets/live2d/Hiyori/Hiyori.model3.json
-    - assets/live2d/Hiyori/Hiyori.physics3.json
     - assets/live2d/Hiyori/Hiyori.moc3
+    - assets/live2d/Hiyori/Hiyori.physics3.json
     - assets/live2d/Hiyori/Hiyori.2048/
+    - assets/live2d/Hiyori/Hiyori.2048/texture_00.png
     - assets/live2d/Hiyori/motions/
+    - assets/live2d/Mao/
+    - assets/live2d/Mao/expressions/
+    - assets/live2d/Mao/Mao.2048/
+    - assets/live2d/Mao/motions/
+    # - assets/live2d/Hiyori/motions/idle_01.motion3.json
+    # - assets/live2d/Hiyori/motions/tap_body_01.motion3.json
+    # - assets/live2d/Hiyori/expressions/
+    # - assets/live2d/Hiyori/expressions/smile.exp3.json
+    # - assets/live2d/Hiyori/expressions/angry.exp3.json
+    # - assets/live2d/Hiyori/expressions/sad.exp3.json

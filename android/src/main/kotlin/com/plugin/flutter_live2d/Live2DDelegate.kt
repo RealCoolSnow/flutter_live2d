@@ -5,6 +5,8 @@ import android.opengl.GLES20
 import com.live2d.sdk.cubism.framework.CubismFramework
 import com.live2d.sdk.cubism.framework.CubismFrameworkConfig.LogLevel
 import com.live2d.sdk.cubism.core.ICubismLogger
+import com.live2d.sdk.cubism.framework.math.CubismMatrix44
+import com.live2d.sdk.cubism.framework.math.CubismViewMatrix
 
 class Live2DDelegate {
     companion object {
@@ -24,13 +26,14 @@ class Live2DDelegate {
 
     private var context: Context? = null
     private var live2dManager: Live2DManager? = null
-    private var view: Live2DView? = null
     private var touchManager = TouchManager()
+    private var viewMatrix = CubismViewMatrix()
+    private var deviceToScreen = CubismMatrix44.create()
     private var windowWidth = 0
     private var windowHeight = 0
 
     private constructor() {
-        // Set up Cubism SDK framework
+        // 初始化Cubism SDK
         val option = CubismFramework.Option()
         option.logFunction = object : ICubismLogger {
             override fun print(message: String) {
@@ -44,49 +47,78 @@ class Live2DDelegate {
     }
 
     fun onStart(context: Context) {
+        println("Live2DDelegate: onStart")
         this.context = context
         live2dManager = Live2DManager()
     }
 
     fun onStop() {
+        println("Live2DDelegate: onStop")
         live2dManager = null
         CubismFramework.dispose()
     }
 
-    fun onDestroy() {
-        releaseInstance()
-    }
-
     fun onSurfaceCreated() {
-        // 设置纹理采样
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
-
-        // 设置混合
+        println("Live2DDelegate: onSurfaceCreated")
+        // 设置OpenGL状态
+        GLES20.glClearColor(0.9f, 0.9f, 1.0f, 1.0f)
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
-
-        // Initialize Cubism SDK
+        
+        // 初始化Cubism SDK
         CubismFramework.initialize()
     }
 
     fun onSurfaceChanged(width: Int, height: Int) {
-        // 设置视口
-        GLES20.glViewport(0, 0, width, height)
+        println("Live2DDelegate: onSurfaceChanged width: $width, height: $height")
         windowWidth = width
         windowHeight = height
+        
+        // 设置视口
+        GLES20.glViewport(0, 0, width, height)
 
-        // Initialize view
+        // 设置视图矩阵
+        val ratio = width.toFloat() / height.toFloat()
+        val left = -ratio
+        val right = ratio
+        val bottom = -1.0f
+        val top = 1.0f
+
+        viewMatrix.setScreenRect(left, right, bottom, top)
+        viewMatrix.scale(1.0f, 1.0f)
+        viewMatrix.setMaxScale(2.0f)
+        viewMatrix.setMinScale(0.8f)
+        viewMatrix.setMaxScreenRect(-2.0f, 2.0f, -2.0f, 2.0f)
+
+        // 初始化设备到屏幕的矩阵
+        deviceToScreen.loadIdentity()
+        if (width > height) {
+            val screenW = Math.abs(right - left)
+            deviceToScreen.scaleRelative(screenW / width, -screenW / width)
+        } else {
+            val screenH = Math.abs(top - bottom)
+            deviceToScreen.scaleRelative(screenH / height, -screenH / height)
+        }
+        deviceToScreen.translateRelative(-width * 0.5f, -height * 0.5f)
+
+        // 更新管理器
         live2dManager?.onSurfaceChanged(width, height)
     }
 
     fun run() {
-        // 清除屏幕
-        GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
-        GLES20.glClearDepthf(1.0f)
-
+        // 清除缓冲区
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+        println("Live2DDelegate: Running frame")
+        
+        // 更新和绘制模型
         live2dManager?.onUpdate()
+    }
+
+    fun loadModel(modelPath: String) {
+        println("Live2DDelegate: loadModel path: $modelPath")
+        context?.let { ctx ->
+            live2dManager?.loadModel(ctx, modelPath)
+        }
     }
 
     fun onTouchBegan(x: Float, y: Float) {
@@ -100,7 +132,6 @@ class Live2DDelegate {
         val viewX = transformViewX(x)
         val viewY = transformViewY(y)
         
-        // 检查是否是点击事件
         if (touchManager.getFlickDistance() < 5.0f) {
             live2dManager?.onTap(viewX, viewY)
         }
@@ -116,20 +147,13 @@ class Live2DDelegate {
     }
 
     private fun transformViewX(deviceX: Float): Float {
-        val screenX = live2dManager?.getDeviceToScreenMatrix()?.transformX(deviceX) ?: deviceX
-        return live2dManager?.getViewMatrix()?.invertTransformX(screenX) ?: deviceX
+        val screenX = deviceToScreen.transformX(deviceX)
+        return viewMatrix.invertTransformX(screenX)
     }
 
     private fun transformViewY(deviceY: Float): Float {
-        // 在Android中，Y坐标需要翻转
-        val screenY = live2dManager?.getDeviceToScreenMatrix()?.transformY(windowHeight - deviceY) ?: deviceY
-        return live2dManager?.getViewMatrix()?.invertTransformY(screenY) ?: deviceY
-    }
-
-    fun loadModel(modelPath: String) {
-        context?.let { context ->
-            live2dManager?.loadModel(context, modelPath)
-        }
+        val screenY = deviceToScreen.transformY(windowHeight - deviceY)
+        return viewMatrix.invertTransformY(screenY)
     }
 
     fun setScale(scale: Float) {
@@ -146,10 +170,6 @@ class Live2DDelegate {
 
     fun setExpression(expression: String) {
         live2dManager?.setExpression(expression)
-    }
-
-    fun setOpacity(opacity: Float) {
-        live2dManager?.setOpacity(opacity)
     }
 
     fun isModelLoaded(): Boolean {

@@ -13,27 +13,24 @@ class Live2DViewFactory(
     
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
         println("Live2DViewFactory: Creating view with id: $viewId")
-        return Live2DPlatformView(context, viewId, messenger)
+        return Live2DPlatformView(context, viewId)
     }
 }
 
 class Live2DPlatformView(
     private val context: Context,
-    private val viewId: Int,
-    private val messenger: BinaryMessenger
+    private val viewId: Int
 ) : PlatformView {
-    private val live2DView: Live2DView = Live2DView(context)
+    private val view: Live2DView = Live2DView(context)
 
     init {
         println("Live2DPlatformView: Initializing view $viewId")
     }
 
-    override fun getView(): View {
-        return live2DView
-    }
+    override fun getView(): View = view
 
     override fun dispose() {
         println("Live2DPlatformView: Disposing view $viewId")
-        live2DView.dispose()
+        view.dispose()
     }
 } 

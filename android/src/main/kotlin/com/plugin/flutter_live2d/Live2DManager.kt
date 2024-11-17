@@ -9,67 +9,64 @@ class Live2DManager {
     private val viewMatrix = CubismViewMatrix()
     private val deviceToScreen = CubismMatrix44.create()
     private val projection = CubismMatrix44.create()
+    private var windowWidth = 0
+    private var windowHeight = 0
 
     fun loadModel(context: Context, modelPath: String) {
         println("Live2DManager: Loading model: $modelPath")
-        val lastSlash = modelPath.lastIndexOf('/')
-        val dir = modelPath.substring(0, lastSlash + 1)
-        
-        model = Live2DModel(context)
-        model?.loadAssets(dir, modelPath.substring(lastSlash + 1))
-        println("Live2DManager: Model loaded")
+        try {
+            val lastSlash = modelPath.lastIndexOf('/')
+            val dir = modelPath.substring(0, lastSlash + 1)
+            val fileName = modelPath.substring(lastSlash + 1)
+            
+            // 释放旧模型
+            model?.dispose()
+            
+            // 创建新模型
+            model = Live2DModel(context).apply {
+                loadAssets(dir, fileName)
+            }
+            
+            // 更新投影矩阵
+            updateProjection()
+            
+            println("Live2DManager: Model loaded successfully")
+        } catch (e: Exception) {
+            println("Live2DManager: Failed to load model")
+            e.printStackTrace()
+        }
     }
 
     fun onSurfaceChanged(width: Int, height: Int) {
-        println("Live2DManager: Surface changed: $width x $height")
-        
-        // Set view matrix
-        val ratio = width.toFloat() / height.toFloat()
-        val left = -ratio
-        val right = ratio
-        val bottom = -1.0f
-        val top = 1.0f
-
-        viewMatrix.setScreenRect(left, right, bottom, top)
-        viewMatrix.scale(1.0f, 1.0f)
-
-        // Set maximum/minimum scale
-        viewMatrix.setMaxScale(2.0f)
-        viewMatrix.setMinScale(0.8f)
-
-        // Set maximum screen range
-        viewMatrix.setMaxScreenRect(
-            -2.0f,
-            2.0f,
-            -2.0f,
-            2.0f
-        )
-
-        // Initialize device to screen matrix
-        deviceToScreen.loadIdentity()
-        if (width > height) {
-            val screenW = Math.abs(right - left)
-            deviceToScreen.scaleRelative(screenW / width, -screenW / width)
-        } else {
-            val screenH = Math.abs(top - bottom)
-            deviceToScreen.scaleRelative(screenH / height, -screenH / height)
-        }
-        deviceToScreen.translateRelative(-width * 0.5f, -height * 0.5f)
-
-        // Update projection matrix
-        projection.loadIdentity()
-        if (model?.getModel()?.getCanvasWidth() ?: 0f > 1.0f && width < height) {
-            model?.getModelMatrix()?.scale(2.0f, 2.0f)
-            projection.scale(1.0f, width.toFloat() / height.toFloat())
-        } else {
-            projection.scale(height.toFloat() / width.toFloat(), 1.0f)
-        }
+        println("Live2DManager: Surface changed width: $width, height: $height")
+        windowWidth = width
+        windowHeight = height
+        updateProjection()
     }
 
     fun onUpdate() {
         model?.let { model ->
+            println("Live2DManager: Updating model")
+            // 更新模型
             model.update()
+            
+            // 绘制模型
+            projection.loadIdentity()
+            println("Live2DManager: Model canvas width: ${model.getModel()?.getCanvasWidth()}")
+            if (model.getModel()?.getCanvasWidth() ?: 0f > 1.0f && windowWidth < windowHeight) {
+                // 横向模型在竖屏显示时的处理
+                println("Live2DManager: Adjusting for portrait mode")
+                model.getModelMatrix()?.scale(2.0f, 2.0f)
+                projection.scale(1.0f, windowWidth.toFloat() / windowHeight.toFloat())
+            } else {
+                println("Live2DManager: Using default scaling")
+                projection.scale(windowHeight.toFloat() / windowWidth.toFloat(), 1.0f)
+            }
+            
+            println("Live2DManager: Drawing model")
             model.draw(projection)
+        } ?: run {
+            println("Live2DManager: No model to update")
         }
     }
 
@@ -90,8 +87,19 @@ class Live2DManager {
         }
     }
 
-    fun getViewMatrix(): CubismViewMatrix = viewMatrix
-    fun getDeviceToScreenMatrix(): CubismMatrix44 = deviceToScreen
+    private fun updateProjection() {
+        model?.let { model ->
+            projection.loadIdentity()
+            
+            // 根据模型和屏幕尺寸调整投影
+            if (model.getModel()?.getCanvasWidth() ?: 0f > 1.0f && windowWidth < windowHeight) {
+                model.getModelMatrix()?.scale(2.0f, 2.0f)
+                projection.scale(1.0f, windowWidth.toFloat() / windowHeight.toFloat())
+            } else {
+                projection.scale(windowHeight.toFloat() / windowWidth.toFloat(), 1.0f)
+            }
+        }
+    }
 
     fun setScale(scale: Float) {
         model?.setScale(scale)
@@ -107,10 +115,6 @@ class Live2DManager {
 
     fun setExpression(expression: String) {
         model?.setExpression(expression)
-    }
-
-    fun setOpacity(opacity: Float) {
-        model?.setOpacity(opacity)
     }
 
     fun isModelLoaded(): Boolean {

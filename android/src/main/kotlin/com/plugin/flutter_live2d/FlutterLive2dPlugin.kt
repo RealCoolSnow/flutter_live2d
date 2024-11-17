@@ -50,10 +50,18 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
                 val modelPath = call.argument<String>("modelPath")
                 println("FlutterLive2dPlugin: Model path: $modelPath")
                 if (modelPath != null) {
-                    Live2DDelegate.getInstance().loadModel(modelPath)
-                    println("FlutterLive2dPlugin: Model loaded")
+                    try {
+                        Live2DDelegate.getInstance().loadModel(modelPath)
+                        println("FlutterLive2dPlugin: Model load initiated")
+                        result.success(null)
+                    } catch (e: Exception) {
+                        println("FlutterLive2dPlugin: Model load failed")
+                        e.printStackTrace()
+                        result.error("LOAD_ERROR", "Failed to load model", e.message)
+                    }
+                } else {
+                    result.error("INVALID_PATH", "Model path is null", null)
                 }
-                result.success(null)
             }
             "setScale" -> {
                 val scale = call.argument<Double>("scale")?.toFloat() ?: 1.0f
