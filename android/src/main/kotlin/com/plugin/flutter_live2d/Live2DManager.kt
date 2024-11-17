@@ -112,4 +112,6 @@ class Live2DManager {
     fun isModelLoaded(): Boolean {
         return model != null
     }
+
+    fun getModel(): Live2DModel? = model
 } 

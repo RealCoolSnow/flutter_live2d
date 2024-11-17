@@ -32,6 +32,9 @@ class Live2DDelegate {
     private var windowWidth = 0
     private var windowHeight = 0
 
+    // 在 Live2DDelegate 中添加
+    fun getLive2DManager(): Live2DManager? = live2dManager
+
     private constructor() {
         // 初始化Cubism SDK
         val option = CubismFramework.Option()
@@ -63,7 +66,12 @@ class Live2DDelegate {
         // 设置OpenGL状态
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         GLES20.glEnable(GLES20.GL_BLEND)
-        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
+        GLES20.glBlendFuncSeparate(
+            GLES20.GL_SRC_ALPHA,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA,
+            GLES20.GL_ONE,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA
+        )
         
         // 初始化Cubism SDK
         CubismFramework.initialize()

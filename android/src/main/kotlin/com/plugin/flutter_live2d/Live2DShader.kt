@@ -18,6 +18,15 @@ class Live2DShader(private val context: Context) {
 
     init {
         programId = createShader()
+        if (programId > 0) {
+            positionLocation = GLES20.glGetAttribLocation(programId, "position")
+            uvLocation = GLES20.glGetAttribLocation(programId, "uv")
+            textureLocation = GLES20.glGetUniformLocation(programId, "texture")
+            baseColorLocation = GLES20.glGetUniformLocation(programId, "baseColor")
+            matrixLocation = GLES20.glGetUniformLocation(programId, "matrix")
+
+            println("Live2DShader: Locations - pos:$positionLocation uv:$uvLocation tex:$textureLocation color:$baseColorLocation matrix:$matrixLocation")
+        }
     }
 
     fun getShaderId(): Int = programId
@@ -45,6 +54,10 @@ class Live2DShader(private val context: Context) {
         // 附加着色器
         GLES20.glAttachShader(programId, vertexShaderId)
         GLES20.glAttachShader(programId, fragmentShaderId)
+
+        // 绑定属性位置 - 必须在链接之前
+        GLES20.glBindAttribLocation(programId, 0, "position")
+        GLES20.glBindAttribLocation(programId, 1, "uv")
 
         // 链接程序
         GLES20.glLinkProgram(programId)
@@ -169,4 +182,10 @@ class Live2DShader(private val context: Context) {
             programId = 0
         }
     }
+
+    fun getPositionLocation(): Int = positionLocation
+    fun getUvLocation(): Int = uvLocation
+    fun getTextureLocation(): Int = textureLocation
+    fun getBaseColorLocation(): Int = baseColorLocation
+    fun getMatrixLocation(): Int = matrixLocation
 } 

@@ -7,9 +7,14 @@ import javax.microedition.khronos.opengles.GL10
 
 class GLRenderer : GLSurfaceView.Renderer {
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        GLES20.glClearColor(1.0f, 1.0f, 1.0f, 0.0f)
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         GLES20.glEnable(GLES20.GL_BLEND)
-        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
+        GLES20.glBlendFuncSeparate(
+            GLES20.GL_SRC_ALPHA,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA,
+            GLES20.GL_ONE,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA
+        )
         
         Live2DDelegate.getInstance().onSurfaceCreated()
     }

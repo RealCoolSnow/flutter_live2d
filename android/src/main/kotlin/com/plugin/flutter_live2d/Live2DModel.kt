@@ -76,7 +76,7 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
                     continue
                 }
 
-                // 加载纹理
+                // 加载纹理 - 添加 flutter_assets 前缀
                 val fullPath = "flutter_assets/$modelHomeDirectory$texturePath"
                 println("Live2DModel: Loading texture: $fullPath")
                 
@@ -133,21 +133,39 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
                     initializeShader()
                 }
                 
-                // 使用着色器程序
-                shader?.getShaderId()?.let { shaderId ->
-                    GLES20.glUseProgram(shaderId)
+                shader?.let { shader ->
+                    // 使用着色器程序
+                    GLES20.glUseProgram(shader.getShaderId())
+                    
+                    // 设置纹理
+                    GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+                    GLES20.glUniform1i(shader.getTextureLocation(), 0)
+                    
+                    // 设置基础颜色
+                    GLES20.glUniform4f(shader.getBaseColorLocation(), 1.0f, 1.0f, 1.0f, 1.0f)
+                    
+                    // 合并用户矩阵和投影矩阵
+                    val drawMatrix = CubismMatrix44.create()
+                    CubismMatrix44.multiply(userModelMatrix.getArray(), matrix.getArray(), drawMatrix.getArray())
+                    
+                    // 设置MVP矩阵
+                    renderer.setMvpMatrix(drawMatrix)
+                    
+                    // 启用顶点属性
+                    GLES20.glEnableVertexAttribArray(shader.getPositionLocation())
+                    GLES20.glEnableVertexAttribArray(shader.getUvLocation())
+                    
+                    // 绘制模型
+                    renderer.drawModel()
+                    
+                    // 禁用顶点属性
+                    GLES20.glDisableVertexAttribArray(shader.getPositionLocation())
+                    GLES20.glDisableVertexAttribArray(shader.getUvLocation())
                 }
-                
-                // 合并用户矩阵和投影矩阵
-                val drawMatrix = CubismMatrix44.create()
-                CubismMatrix44.multiply(userModelMatrix.getArray(), matrix.getArray(), drawMatrix.getArray())
-                
-                // 设置MVP矩阵并绘制
-                renderer.setMvpMatrix(drawMatrix)
-                renderer.drawModel()
             }
         } catch (e: Exception) {
             println("Live2DModel: Error drawing model: ${e.message}")
+            e.printStackTrace()
         }
     }
 
