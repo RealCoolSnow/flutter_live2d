@@ -46,4 +46,12 @@ abstract class FlutterLive2dPlatform extends PlatformInterface {
   Future<void> setExpression(String expression) {
     throw UnimplementedError('setExpression() has not been implemented.');
   }
+
+  Future<void> setOpacity(double opacity) {
+    throw UnimplementedError('setOpacity() has not been implemented.');
+  }
+
+  Future<bool> isModelLoaded() {
+    throw UnimplementedError('isModelLoaded() has not been implemented.');
+  }
 }

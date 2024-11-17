@@ -86,15 +86,9 @@ flutter:
 
   assets:
     - assets/live2d/
-    - assets/live2d/Haru/
-    - assets/live2d/Haru/Haru.model3.json
-    - assets/live2d/Haru/Haru.physics3.json
-    - assets/live2d/Haru/Haru.2048/
-    - assets/live2d/Haru/motions/
-    - assets/live2d/Haru/expressions/
-    - assets/live2d/Haru/sounds/
     - assets/live2d/Hiyori/
     - assets/live2d/Hiyori/Hiyori.model3.json
     - assets/live2d/Hiyori/Hiyori.physics3.json
+    - assets/live2d/Hiyori/Hiyori.moc3
     - assets/live2d/Hiyori/Hiyori.2048/
     - assets/live2d/Hiyori/motions/

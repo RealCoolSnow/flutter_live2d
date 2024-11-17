@@ -42,4 +42,15 @@ class MethodChannelFlutterLive2d extends FlutterLive2dPlatform {
     await methodChannel
         .invokeMethod('setExpression', {'expression': expression});
   }
+
+  @override
+  Future<void> setOpacity(double opacity) async {
+    await methodChannel.invokeMethod('setOpacity', {'opacity': opacity});
+  }
+
+  @override
+  Future<bool> isModelLoaded() async {
+    final bool? result = await methodChannel.invokeMethod('isModelLoaded');
+    return result ?? false;
+  }
 }

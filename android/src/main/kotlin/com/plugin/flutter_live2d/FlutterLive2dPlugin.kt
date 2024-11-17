@@ -25,23 +25,19 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
             channel.setMethodCallHandler(this)
             println("FlutterLive2dPlugin: Method handler set")
             
-            viewFactory = Live2DViewFactory()
-            println("FlutterLive2dPlugin: View factory created")
-            
-            flutterPluginBinding
-                .platformViewRegistry
-                .registerViewFactory("live2d_view", viewFactory!!)
+            flutterPluginBinding.platformViewRegistry
+                .registerViewFactory(
+                    "live2d_view",
+                    Live2DViewFactory(flutterPluginBinding.binaryMessenger)
+                )
             println("FlutterLive2dPlugin: View factory registered")
         } catch (e: Exception) {
             println("FlutterLive2dPlugin: Error in onAttachedToEngine")
             e.printStackTrace()
         }
-        
-        println("FlutterLive2dPlugin: onAttachedToEngine end")
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-        val live2DView = viewFactory?.getCurrentView()
         println("FlutterLive2dPlugin: Method called: ${call.method}")
         
         when (call.method) {
@@ -53,37 +49,32 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
                 println("FlutterLive2dPlugin: Loading model")
                 val modelPath = call.argument<String>("modelPath")
                 println("FlutterLive2dPlugin: Model path: $modelPath")
-                if (live2DView == null) {
-                    println("FlutterLive2dPlugin: Live2DView is null")
-                    result.error("NO_VIEW", "Live2DView not found", null)
-                    return
-                }
-                modelPath?.let { 
-                    live2DView.loadModel(it)
+                if (modelPath != null) {
+                    Live2DDelegate.getInstance().loadModel(modelPath)
                     println("FlutterLive2dPlugin: Model loaded")
                 }
                 result.success(null)
             }
             "setScale" -> {
                 val scale = call.argument<Double>("scale")?.toFloat() ?: 1.0f
-                live2DView?.setScale(scale)
+                Live2DDelegate.getInstance().setScale(scale)
                 result.success(null)
             }
             "setPosition" -> {
                 val x = call.argument<Double>("x")?.toFloat() ?: 0.0f
                 val y = call.argument<Double>("y")?.toFloat() ?: 0.0f
-                live2DView?.setPosition(x, y)
+                Live2DDelegate.getInstance().setPosition(x, y)
                 result.success(null)
             }
             "startMotion" -> {
                 val group = call.argument<String>("group") ?: return
                 val index = call.argument<Int>("index") ?: return
-                live2DView?.startMotion(group, index)
+                Live2DDelegate.getInstance().startMotion(group, index)
                 result.success(null)
             }
             "setExpression" -> {
                 val expression = call.argument<String>("expression") ?: return
-                live2DView?.setExpression(expression)
+                Live2DDelegate.getInstance().setExpression(expression)
                 result.success(null)
             }
             else -> {
