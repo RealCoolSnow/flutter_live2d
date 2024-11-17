@@ -15,9 +15,9 @@ object LAppPal {
         }
     }
 
-    fun moveTaskToBack() {
-        LAppDelegate.getInstance().getActivity().moveTaskToBack(true)
-    }
+    // fun moveTaskToBack() {
+    //     LAppDelegate.getInstance().getActivity().moveTaskToBack(true)
+    // }
 
     fun updateTime() {
         s_currentFrame = getSystemNanoTime()
