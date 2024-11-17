@@ -16,15 +16,15 @@ class GLRenderer : GLSurfaceView.Renderer {
             GLES20.GL_ONE_MINUS_SRC_ALPHA
         )
         
-        Live2DDelegate.getInstance().onSurfaceCreated()
+        LAppDelegate.getInstance().onSurfaceCreated()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        Live2DDelegate.getInstance().onSurfaceChanged(width, height)
+        LAppDelegate.getInstance().onSurfaceChanged(width, height)
     }
 
     override fun onDrawFrame(gl: GL10?) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
-        Live2DDelegate.getInstance().run()
+        LAppDelegate.getInstance().run()
     }
 } 

@@ -8,13 +8,13 @@ import com.live2d.sdk.cubism.core.ICubismLogger
 import com.live2d.sdk.cubism.framework.math.CubismMatrix44
 import com.live2d.sdk.cubism.framework.math.CubismViewMatrix
 
-class Live2DDelegate {
+class LAppDelegate {
     companion object {
-        private var instance: Live2DDelegate? = null
+        private var instance: LAppDelegate? = null
         
-        fun getInstance(): Live2DDelegate {
+        fun getInstance(): LAppDelegate {
             if (instance == null) {
-                instance = Live2DDelegate()
+                instance = LAppDelegate()
             }
             return instance!!
         }
@@ -25,15 +25,15 @@ class Live2DDelegate {
     }
 
     private var context: Context? = null
-    private var live2dManager: Live2DManager? = null
+    private var LAppLive2DManager: LAppLive2DManager? = null
     private var touchManager = TouchManager()
     private var viewMatrix = CubismViewMatrix()
     private var deviceToScreen = CubismMatrix44.create()
     private var windowWidth = 0
     private var windowHeight = 0
 
-    // 在 Live2DDelegate 中添加
-    fun getLive2DManager(): Live2DManager? = live2dManager
+    // 在 LAppDelegate 中添加
+    fun getLAppLive2DManager(): LAppLive2DManager? = LAppLive2DManager
 
     private constructor() {
         // 初始化Cubism SDK
@@ -50,22 +50,22 @@ class Live2DDelegate {
     }
 
     fun onStart(context: Context) {
-        println("Live2DDelegate: onStart")
+        println("LAppDelegate: onStart")
         this.context = context
-        live2dManager = Live2DManager()
+        LAppLive2DManager = LAppLive2DManager()
         
         // 设置渲染目标为默认
-        (context as? Live2DView)?.switchRenderingTarget(Live2DView.RenderingTarget.NONE)
+        (context as? LAppView)?.switchRenderingTarget(LAppView.RenderingTarget.NONE)
     }
 
     fun onStop() {
-        println("Live2DDelegate: onStop")
-        live2dManager = null
+        println("LAppDelegate: onStop")
+        LAppLive2DManager = null
         CubismFramework.dispose()
     }
 
     fun onSurfaceCreated() {
-        println("Live2DDelegate: onSurfaceCreated")
+        println("LAppDelegate: onSurfaceCreated")
         // 设置OpenGL状态
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         GLES20.glEnable(GLES20.GL_BLEND)
@@ -81,7 +81,7 @@ class Live2DDelegate {
     }
 
     fun onSurfaceChanged(width: Int, height: Int) {
-        println("Live2DDelegate: onSurfaceChanged width: $width, height: $height")
+        println("LAppDelegate: onSurfaceChanged width: $width, height: $height")
         windowWidth = width
         windowHeight = height
         
@@ -113,7 +113,7 @@ class Live2DDelegate {
         deviceToScreen.translateRelative(-width * 0.5f, -height * 0.5f)
 
         // 更新管理器
-        live2dManager?.onSurfaceChanged(width, height)
+        LAppLive2DManager?.onSurfaceChanged(width, height)
     }
 
     fun run() {
@@ -123,17 +123,17 @@ class Live2DDelegate {
         // 检查OpenGL错误
         val error = GLES20.glGetError()
         if (error != GLES20.GL_NO_ERROR) {
-            println("Live2DDelegate: OpenGL error: $error")
+            println("LAppDelegate: OpenGL error: $error")
         }
         
         // 更新和绘制模型
-        live2dManager?.onUpdate()
+        LAppLive2DManager?.onUpdate()
     }
 
     fun loadModel(modelPath: String) {
-        println("Live2DDelegate: loadModel path: $modelPath")
+        println("LAppDelegate: loadModel path: $modelPath")
         context?.let { ctx ->
-            live2dManager?.loadModel(ctx, modelPath)
+            LAppLive2DManager?.loadModel(ctx, modelPath)
         }
     }
 
@@ -141,7 +141,7 @@ class Live2DDelegate {
         touchManager.touchesBegan(x, y)
         val viewX = transformViewX(touchManager.lastX)
         val viewY = transformViewY(touchManager.lastY)
-        live2dManager?.onDrag(viewX, viewY)
+        LAppLive2DManager?.onDrag(viewX, viewY)
     }
 
     fun onTouchEnd(x: Float, y: Float) {
@@ -149,17 +149,17 @@ class Live2DDelegate {
         val viewY = transformViewY(y)
         
         if (touchManager.getFlickDistance() < 5.0f) {
-            live2dManager?.onTap(viewX, viewY)
+            LAppLive2DManager?.onTap(viewX, viewY)
         }
         
-        live2dManager?.onDrag(0.0f, 0.0f)
+        LAppLive2DManager?.onDrag(0.0f, 0.0f)
     }
 
     fun onTouchMoved(x: Float, y: Float) {
         touchManager.touchesMoved(x, y)
         val viewX = transformViewX(touchManager.lastX)
         val viewY = transformViewY(touchManager.lastY)
-        live2dManager?.onDrag(viewX, viewY)
+        LAppLive2DManager?.onDrag(viewX, viewY)
     }
 
     private fun transformViewX(deviceX: Float): Float {
@@ -173,23 +173,23 @@ class Live2DDelegate {
     }
 
     fun setScale(scale: Float) {
-        live2dManager?.setScale(scale)
+        LAppLive2DManager?.setScale(scale)
     }
 
     fun setPosition(x: Float, y: Float) {
-        live2dManager?.setPosition(x, y)
+        LAppLive2DManager?.setPosition(x, y)
     }
 
     fun startMotion(group: String, index: Int) {
-        live2dManager?.startMotion(group, index)
+        LAppLive2DManager?.startMotion(group, index)
     }
 
     fun setExpression(expression: String) {
-        live2dManager?.setExpression(expression)
+        LAppLive2DManager?.setExpression(expression)
     }
 
     fun isModelLoaded(): Boolean {
-        return live2dManager?.isModelLoaded() ?: false
+        return LAppLive2DManager?.isModelLoaded() ?: false
     }
 
     fun getContext(): Context? = context

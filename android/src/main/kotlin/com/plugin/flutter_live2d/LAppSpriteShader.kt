@@ -4,9 +4,9 @@ import android.content.Context
 import android.opengl.GLES20
 import android.util.Log
 
-class Live2DShader(private val context: Context) {
+class LAppSpriteShader(private val context: Context) {
     companion object {
-        private const val TAG = "Live2DShader"
+        private const val TAG = "LAppSpriteShader"
     }
 
     private var programId: Int = 0
@@ -25,7 +25,7 @@ class Live2DShader(private val context: Context) {
             baseColorLocation = GLES20.glGetUniformLocation(programId, "baseColor")
             matrixLocation = GLES20.glGetUniformLocation(programId, "matrix")
 
-            println("Live2DShader: Locations - pos:$positionLocation uv:$uvLocation tex:$textureLocation color:$baseColorLocation matrix:$matrixLocation")
+            println("LAppSpriteShader: Locations - pos:$positionLocation uv:$uvLocation tex:$textureLocation color:$baseColorLocation matrix:$matrixLocation")
         }
     }
 
@@ -82,73 +82,73 @@ class Live2DShader(private val context: Context) {
     private fun compileShader(fileName: String, shaderType: Int): Int {
         try {
             // 打印文件名和着色器类型
-            println("Live2DShader: Compiling shader - File: $fileName, Type: ${if (shaderType == GLES20.GL_VERTEX_SHADER) "Vertex" else "Fragment"}")
+            println("LAppSpriteShader: Compiling shader - File: $fileName, Type: ${if (shaderType == GLES20.GL_VERTEX_SHADER) "Vertex" else "Fragment"}")
             
             // 尝试打开文件
-            println("Live2DShader: Attempting to open shader file...")
+            println("LAppSpriteShader: Attempting to open shader file...")
             val shaderBuffer = try {
                 context.assets.open(fileName).use { it.readBytes() }
             } catch (e: Exception) {
-                println("Live2DShader: Failed to open shader file: ${e.message}")
+                println("LAppSpriteShader: Failed to open shader file: ${e.message}")
                 e.printStackTrace()
                 return 0
             }
             
             // 打印着色器代码
             val shaderCode = String(shaderBuffer)
-            println("Live2DShader: Shader code:\n$shaderCode")
+            println("LAppSpriteShader: Shader code:\n$shaderCode")
 
             // 创建着色器
-            println("Live2DShader: Creating shader...")
+            println("LAppSpriteShader: Creating shader...")
             val shaderId = GLES20.glCreateShader(shaderType)
             if (shaderId == 0) {
-                println("Live2DShader: Failed to create shader object")
+                println("LAppSpriteShader: Failed to create shader object")
                 return 0
             }
-            println("Live2DShader: Created shader with ID: $shaderId")
+            println("LAppSpriteShader: Created shader with ID: $shaderId")
 
             // 加载着色器源码
-            println("Live2DShader: Loading shader source...")
+            println("LAppSpriteShader: Loading shader source...")
             GLES20.glShaderSource(shaderId, shaderCode)
             
             // 检查OpenGL错误
             var error = GLES20.glGetError()
             if (error != GLES20.GL_NO_ERROR) {
-                println("Live2DShader: Error after loading shader source: $error")
+                println("LAppSpriteShader: Error after loading shader source: $error")
             }
 
             // 编译着色器
-            println("Live2DShader: Compiling shader...")
+            println("LAppSpriteShader: Compiling shader...")
             GLES20.glCompileShader(shaderId)
             
             // 检查OpenGL错误
             error = GLES20.glGetError()
             if (error != GLES20.GL_NO_ERROR) {
-                println("Live2DShader: Error after compiling shader: $error")
+                println("LAppSpriteShader: Error after compiling shader: $error")
             }
 
             // 获取编译状态
             val compileStatus = IntArray(1)
             GLES20.glGetShaderiv(shaderId, GLES20.GL_COMPILE_STATUS, compileStatus, 0)
-            println("Live2DShader: Compile status: ${compileStatus[0]}")
+            println("LAppSpriteShader: Compile status: ${compileStatus[0]}")
 
             // 总是获取并打印编译日志
             val log = GLES20.glGetShaderInfoLog(shaderId)
             if (log.isNotEmpty()) {
-                println("Live2DShader: Compilation log: $log")
+                println("LAppSpriteShader: Compilation log: $log")
             }
 
             // 检查编译状态
             if (compileStatus[0] == GLES20.GL_FALSE) {
-                println("Live2DShader: Shader compilation failed")
+                println("LAppSpriteShader: Shader compilation failed")
                 GLES20.glDeleteShader(shaderId)
                 return 0
             }
 
-            println("Live2DShader: Shader compiled successfully")
+            println("LAppSpriteShader: Shader compiled successfully")
             return shaderId
         } catch (e: Exception) {
-            println("Live2DShader: Exception during shader compilation: ${e.message}")
+            println("LAppSpriteShader: Exception during shader compilation: ${e.message}")
             e.printStackTrace()
             return 0
         }

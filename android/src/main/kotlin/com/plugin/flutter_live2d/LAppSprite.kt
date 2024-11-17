@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-class Sprite(
+class LAppSprite(
     x: Float,
     y: Float,
     width: Float,

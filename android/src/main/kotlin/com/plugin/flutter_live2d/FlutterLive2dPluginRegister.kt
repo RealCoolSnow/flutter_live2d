@@ -12,7 +12,7 @@ object FlutterLive2dPluginRegister {
                 registrar.platformViewRegistry()
                     .registerViewFactory(
                         "live2d_view", 
-                        Live2DViewFactory(registrar.messenger())
+                        LAppViewFactory(registrar.messenger())
                     )
             }
         }

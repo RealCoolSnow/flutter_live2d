@@ -5,7 +5,7 @@ import android.graphics.BitmapFactory
 import android.opengl.GLES20
 import android.opengl.GLUtils
 
-class TextureManager(private val context: Context) {
+class LAppTextureManager(private val context: Context) {
     data class TextureInfo(
         val id: Int,
         val width: Int,
@@ -20,7 +20,7 @@ class TextureManager(private val context: Context) {
         textures.find { it.filePath == filePath }?.let { return it }
 
         try {
-            println("TextureManager: Loading texture: $filePath")
+            println("LAppTextureManager: Loading texture: $filePath")
             context.assets.open(filePath).use { inputStream ->
                 val bitmap = BitmapFactory.decodeStream(inputStream)
                 if (bitmap != null) {
@@ -49,12 +49,12 @@ class TextureManager(private val context: Context) {
                     textures.add(textureInfo)
                     bitmap.recycle()
 
-                    println("TextureManager: Texture loaded: $textureInfo")
+                    println("LAppTextureManager: Texture loaded: $textureInfo")
                     return textureInfo
                 }
             }
         } catch (e: Exception) {
-            println("TextureManager: Failed to load texture: $filePath")
+            println("LAppTextureManager: Failed to load texture: $filePath")
             e.printStackTrace()
         }
 

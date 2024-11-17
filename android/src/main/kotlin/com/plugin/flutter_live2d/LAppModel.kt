@@ -15,7 +15,7 @@ import com.live2d.sdk.cubism.framework.utils.CubismDebug
 import com.live2d.sdk.cubism.framework.rendering.CubismRenderer
 import android.opengl.GLES20
 
-class Live2DModel(private val context: Context) : CubismUserModel() {
+class LAppModel(private val context: Context) : CubismUserModel() {
     private var modelSetting: ICubismModelSetting? = null
     private var modelHomeDirectory: String = ""
     private var userTimeSeconds: Float = 0.0f
@@ -23,15 +23,15 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
     private var modelPositionX = 0.0f
     private var modelPositionY = 0.0f
     private val userModelMatrix = CubismMatrix44.create()
-    private lateinit var textureManager: TextureManager
-    private var shader: Live2DShader? = null
+    private lateinit var LAppTextureManager: LAppTextureManager
+    private var shader: LAppSpriteShader? = null
 
     init {
-        textureManager = TextureManager(context)
+        LAppTextureManager = LAppTextureManager(context)
     }
 
     fun loadAssets(dir: String, fileName: String) {
-        println("Live2DModel: Loading assets from dir: $dir, file: $fileName")
+        println("LAppModel: Loading assets from dir: $dir, file: $fileName")
         modelHomeDirectory = dir
         val path = modelHomeDirectory + fileName
         
@@ -45,23 +45,23 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
             val modelPath = modelHomeDirectory + modelFileName
             val modelBuffer = createBuffer(modelPath)
             loadModel(modelBuffer)
-            println("Live2DModel: Model loaded")
+            println("LAppModel: Model loaded")
 
             // Initialize user matrix
             userModelMatrix.loadIdentity()
-            println("Live2DModel: Matrix initialized")
+            println("LAppModel: Matrix initialized")
         }
         
         // Setup renderer
         setupRenderer(CubismRendererAndroid.create())
-        println("Live2DModel: Renderer setup")
+        println("LAppModel: Renderer setup")
         
         // Setup textures
         setupTextures()
     }
 
     private fun setupTextures() {
-        println("Live2DModel: Setting up textures")
+        println("LAppModel: Setting up textures")
         try {
             val renderer = getRenderer() as CubismRendererAndroid
             
@@ -72,25 +72,25 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
                 // 获取纹理路径
                 val texturePath = modelSetting?.getTextureFileName(modelTextureNumber)
                 if (texturePath.isNullOrEmpty()) {
-                    println("Live2DModel: Empty texture path for number $modelTextureNumber")
+                    println("LAppModel: Empty texture path for number $modelTextureNumber")
                     continue
                 }
 
                 // 加载理 - 添加 flutter_assets 前缀
                 val fullPath = "flutter_assets/$modelHomeDirectory$texturePath"
-                println("Live2DModel: Loading texture: $fullPath")
+                println("LAppModel: Loading texture: $fullPath")
                 
-                val textureInfo = textureManager.createTextureFromPngFile(fullPath)
+                val textureInfo = LAppTextureManager.createTextureFromPngFile(fullPath)
                 
                 // 绑定纹理到渲染器
                 renderer.bindTexture(modelTextureNumber, textureInfo.id)
                 
-                println("Live2DModel: Texture $modelTextureNumber bound to GL texture ${textureInfo.id}")
+                println("LAppModel: Texture $modelTextureNumber bound to GL texture ${textureInfo.id}")
             }
             
-            println("Live2DModel: All textures set up")
+            println("LAppModel: All textures set up")
         } catch (e: Exception) {
-            println("Live2DModel: Error setting up textures")
+            println("LAppModel: Error setting up textures")
             e.printStackTrace()
         }
     }
@@ -164,7 +164,7 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
                 }
             }
         } catch (e: Exception) {
-            println("Live2DModel: Error drawing model: ${e.message}")
+            println("LAppModel: Error drawing model: ${e.message}")
             e.printStackTrace()
         }
     }
@@ -226,7 +226,7 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
     private fun createBuffer(path: String): ByteArray {
         return try {
             val assetPath = "flutter_assets/$path"
-            println("Live2DModel: Loading file: $assetPath")
+            println("LAppModel: Loading file: $assetPath")
             
             // 列出可用的资源文件
             context.assets.list("")?.forEach { 
@@ -239,11 +239,11 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
             // 读取文件
             context.assets.open(assetPath).use { inputStream ->
                 inputStream.readBytes().also { bytes ->
-                    println("Live2DModel: Successfully loaded ${bytes.size} bytes from $assetPath")
+                    println("LAppModel: Successfully loaded ${bytes.size} bytes from $assetPath")
                 }
             }
         } catch (e: Exception) {
-            println("Live2DModel: Failed to load file: $path")
+            println("LAppModel: Failed to load file: $path")
             e.printStackTrace()
             ByteArray(0)
         }
@@ -340,7 +340,7 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
     }
 
     fun dispose() {
-        println("Live2DModel: Disposing...")
+        println("LAppModel: Disposing...")
         try {
             // 放渲染器
             (getRenderer() as? CubismRendererAndroid)?.close()
@@ -359,16 +359,16 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
             
             shader?.dispose()
             
-            println("Live2DModel: Disposed successfully")
+            println("LAppModel: Disposed successfully")
         } catch (e: Exception) {
-            println("Live2DModel: Error during disposal")
+            println("LAppModel: Error during disposal")
             e.printStackTrace()
         }
     }
 
     fun initializeShader() {
         // 在OpenGL上下文中创建着色器
-        shader = Live2DShader(context)
+        shader = LAppSpriteShader(context)
         if (shader?.getShaderId() == 0) {
             throw RuntimeException("Failed to create shader program")
         }

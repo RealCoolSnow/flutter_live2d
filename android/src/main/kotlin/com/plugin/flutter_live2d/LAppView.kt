@@ -8,7 +8,7 @@ import android.view.MotionEvent
 import com.live2d.sdk.cubism.framework.math.CubismMatrix44
 import com.live2d.sdk.cubism.framework.math.CubismViewMatrix
 
-class Live2DView(context: Context) : GLSurfaceView(context) {
+class LAppView(context: Context) : GLSurfaceView(context) {
     // 添加渲染目标枚举
     enum class RenderingTarget {
         NONE,                   // 默认帧缓冲
@@ -16,11 +16,11 @@ class Live2DView(context: Context) : GLSurfaceView(context) {
         VIEW_FRAME_BUFFER      // View持有的帧缓冲
     }
 
-    private var delegate: Live2DDelegate = Live2DDelegate.getInstance()
+    private var delegate: LAppDelegate = LAppDelegate.getInstance()
     private val renderer: GLRenderer
-    private var shader: Live2DShader? = null
-    private var backSprite: Sprite? = null
-    private var renderingSprite: Sprite? = null
+    private var shader: LAppSpriteShader? = null
+    private var backSprite: LAppSprite? = null
+    private var renderingSprite: LAppSprite? = null
     private var renderingTarget = RenderingTarget.NONE
     
     // 视图矩阵相关
@@ -30,7 +30,7 @@ class Live2DView(context: Context) : GLSurfaceView(context) {
     private var minScale = 0.8f
 
     init {
-        println("Live2DView: Initializing GLSurfaceView...")
+        println("LAppView: Initializing GLSurfaceView...")
         
         // 设置OpenGL ES 2.0
         setEGLContextClientVersion(2)
@@ -50,7 +50,7 @@ class Live2DView(context: Context) : GLSurfaceView(context) {
 
         // 等待OpenGL上下文创建完成
         queueEvent {
-            println("Live2DView: OpenGL context created")
+            println("LAppView: OpenGL context created")
             // 初始化Live2D
             delegate.onStart(context)
             // 初始化着色器和精灵
@@ -60,7 +60,7 @@ class Live2DView(context: Context) : GLSurfaceView(context) {
 
     private fun initialize() {
         // 创建着色器
-        shader = Live2DShader(context)
+        shader = LAppSpriteShader(context)
         val programId = shader?.getShaderId() ?: return
 
         val width = delegate.getWindowWidth()
@@ -91,7 +91,7 @@ class Live2DView(context: Context) : GLSurfaceView(context) {
         deviceToScreen.translateRelative(-width * 0.5f, -height * 0.5f)
 
         // 创建渲染精灵
-        renderingSprite = Sprite(
+        renderingSprite = LAppSprite(
             width * 0.5f,
             height * 0.5f,
             width.toFloat(),
@@ -114,7 +114,7 @@ class Live2DView(context: Context) : GLSurfaceView(context) {
 
         // 如果使用单独的渲染目标，渲染精灵
         if (renderingTarget != RenderingTarget.NONE && renderingSprite != null) {
-            val model = delegate.getLive2DManager()?.getModel()
+            val model = delegate.getLAppLive2DManager()?.getModel()
             if (model != null) {
                 // 设置精灵的颜色和透明度
                 renderingSprite?.setColor(1.0f, 1.0f, 1.0f, 1.0f)
@@ -163,7 +163,7 @@ class Live2DView(context: Context) : GLSurfaceView(context) {
     }
 
     fun dispose() {
-        println("Live2DView: Disposing...")
+        println("LAppView: Disposing...")
         delegate.onStop()
         shader?.dispose()
     }

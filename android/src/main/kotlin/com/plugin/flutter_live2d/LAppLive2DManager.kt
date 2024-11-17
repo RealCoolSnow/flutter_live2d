@@ -4,8 +4,8 @@ import android.content.Context
 import com.live2d.sdk.cubism.framework.math.CubismMatrix44
 import com.live2d.sdk.cubism.framework.math.CubismViewMatrix
 
-class Live2DManager {
-    private var model: Live2DModel? = null
+class LAppLive2DManager {
+    private var model: LAppModel? = null
     private val viewMatrix = CubismViewMatrix()
     private val deviceToScreen = CubismMatrix44.create()
     private val projection = CubismMatrix44.create()
@@ -13,7 +13,7 @@ class Live2DManager {
     private var windowHeight = 0
 
     fun loadModel(context: Context, modelPath: String) {
-        println("Live2DManager: Loading model: $modelPath")
+        println("LAppLive2DManager: Loading model: $modelPath")
         try {
             val lastSlash = modelPath.lastIndexOf('/')
             val dir = modelPath.substring(0, lastSlash + 1)
@@ -23,22 +23,22 @@ class Live2DManager {
             model?.dispose()
             
             // 创建新模型
-            model = Live2DModel(context).apply {
+            model = LAppModel(context).apply {
                 loadAssets(dir, fileName)
             }
             
             // 更新投影矩阵
             updateProjection()
             
-            println("Live2DManager: Model loaded successfully")
+            println("LAppLive2DManager: Model loaded successfully")
         } catch (e: Exception) {
-            println("Live2DManager: Failed to load model")
+            println("LAppLive2DManager: Failed to load model")
             e.printStackTrace()
         }
     }
 
     fun onSurfaceChanged(width: Int, height: Int) {
-        println("Live2DManager: Surface changed width: $width, height: $height")
+        println("LAppLive2DManager: Surface changed width: $width, height: $height")
         windowWidth = width
         windowHeight = height
         updateProjection()
@@ -113,5 +113,5 @@ class Live2DManager {
         return model != null
     }
 
-    fun getModel(): Live2DModel? = model
+    fun getModel(): LAppModel? = model
 } 
