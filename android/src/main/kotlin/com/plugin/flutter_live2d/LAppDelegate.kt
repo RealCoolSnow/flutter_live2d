@@ -25,7 +25,8 @@ class LAppDelegate {
     }
 
     private var context: Context? = null
-    private var LAppLive2DManager: LAppLive2DManager? = null
+    private var live2dManager: LAppLive2DManager? = null
+    private var view: LAppView? = null
     private var touchManager = TouchManager()
     private var viewMatrix = CubismViewMatrix()
     private var deviceToScreen = CubismMatrix44.create()
@@ -33,7 +34,7 @@ class LAppDelegate {
     private var windowHeight = 0
 
     // 在 LAppDelegate 中添加
-    fun getLAppLive2DManager(): LAppLive2DManager? = LAppLive2DManager
+    fun getLAppLive2DManager(): LAppLive2DManager? = live2dManager
 
     private constructor() {
         // 初始化Cubism SDK
@@ -52,7 +53,7 @@ class LAppDelegate {
     fun onStart(context: Context) {
         println("LAppDelegate: onStart")
         this.context = context
-        LAppLive2DManager = LAppLive2DManager()
+        live2dManager = LAppLive2DManager()
         
         // 设置渲染目标为默认
         (context as? LAppView)?.switchRenderingTarget(LAppView.RenderingTarget.NONE)
@@ -60,7 +61,7 @@ class LAppDelegate {
 
     fun onStop() {
         println("LAppDelegate: onStop")
-        LAppLive2DManager = null
+        live2dManager = null
         CubismFramework.dispose()
     }
 
@@ -78,6 +79,9 @@ class LAppDelegate {
         
         // 初始化Cubism SDK
         CubismFramework.initialize()
+
+        // 初始化View的着色器
+        view?.onSurfaceCreated()
     }
 
     fun onSurfaceChanged(width: Int, height: Int) {
@@ -113,7 +117,7 @@ class LAppDelegate {
         deviceToScreen.translateRelative(-width * 0.5f, -height * 0.5f)
 
         // 更新管理器
-        LAppLive2DManager?.onSurfaceChanged(width, height)
+        live2dManager?.onSurfaceChanged(width, height)
     }
 
     fun run() {
@@ -127,13 +131,13 @@ class LAppDelegate {
         }
         
         // 更新和绘制模型
-        LAppLive2DManager?.onUpdate()
+        live2dManager?.onUpdate()
     }
 
     fun loadModel(modelPath: String) {
         println("LAppDelegate: loadModel path: $modelPath")
         context?.let { ctx ->
-            LAppLive2DManager?.loadModel(ctx, modelPath)
+            live2dManager?.loadModel(ctx, modelPath)
         }
     }
 
@@ -141,7 +145,7 @@ class LAppDelegate {
         touchManager.touchesBegan(x, y)
         val viewX = transformViewX(touchManager.lastX)
         val viewY = transformViewY(touchManager.lastY)
-        LAppLive2DManager?.onDrag(viewX, viewY)
+        live2dManager?.onDrag(viewX, viewY)
     }
 
     fun onTouchEnd(x: Float, y: Float) {
@@ -149,17 +153,17 @@ class LAppDelegate {
         val viewY = transformViewY(y)
         
         if (touchManager.getFlickDistance() < 5.0f) {
-            LAppLive2DManager?.onTap(viewX, viewY)
+            live2dManager?.onTap(viewX, viewY)
         }
         
-        LAppLive2DManager?.onDrag(0.0f, 0.0f)
+        live2dManager?.onDrag(0.0f, 0.0f)
     }
 
     fun onTouchMoved(x: Float, y: Float) {
         touchManager.touchesMoved(x, y)
         val viewX = transformViewX(touchManager.lastX)
         val viewY = transformViewY(touchManager.lastY)
-        LAppLive2DManager?.onDrag(viewX, viewY)
+        live2dManager?.onDrag(viewX, viewY)
     }
 
     private fun transformViewX(deviceX: Float): Float {
@@ -173,23 +177,23 @@ class LAppDelegate {
     }
 
     fun setScale(scale: Float) {
-        LAppLive2DManager?.setScale(scale)
+        live2dManager?.setScale(scale)
     }
 
     fun setPosition(x: Float, y: Float) {
-        LAppLive2DManager?.setPosition(x, y)
+        live2dManager?.setPosition(x, y)
     }
 
     fun startMotion(group: String, index: Int) {
-        LAppLive2DManager?.startMotion(group, index)
+        live2dManager?.startMotion(group, index)
     }
 
     fun setExpression(expression: String) {
-        LAppLive2DManager?.setExpression(expression)
+        live2dManager?.setExpression(expression)
     }
 
     fun isModelLoaded(): Boolean {
-        return LAppLive2DManager?.isModelLoaded() ?: false
+        return live2dManager?.isModelLoaded() ?: false
     }
 
     fun getContext(): Context? = context
@@ -198,5 +202,9 @@ class LAppDelegate {
 
     fun setBackgroundImage(imagePath: String) {
         (context as? LAppView)?.setBackgroundImage(imagePath)
+    }
+
+    fun setView(view: LAppView) {
+        this.view = view
     }
 } 

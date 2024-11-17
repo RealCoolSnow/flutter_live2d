@@ -51,13 +51,24 @@ class LAppView(context: Context) : GLSurfaceView(context) {
         // 设置渲染模式为连续渲染
         renderMode = RENDERMODE_CONTINUOUSLY
 
-        // 等待OpenGL上下文创建完成
-        queueEvent {
-            println("LAppView: OpenGL context created")
-            // 初始化Live2D
-            delegate.onStart(context)
-            // 初始化着色器和精灵
-            initialize()
+        // 设置view到delegate
+        delegate.setView(this)
+    }
+
+    // 在onSurfaceCreated中初始化着色器
+    fun onSurfaceCreated() {
+        println("LAppView: onSurfaceCreated")
+        
+        // 创建着色器
+        shader = LAppSpriteShader(context)
+        if (shader?.getShaderId() == 0) {
+            println("LAppView: Failed to create shader")
+        } else {
+            println("LAppView: Shader created successfully")
+            // 如果有待处理的背景图，创建背景精灵
+            backImagePath?.let {
+                createBackSprite()
+            }
         }
     }
 
