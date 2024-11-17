@@ -29,6 +29,9 @@ class LAppView(context: Context) : GLSurfaceView(context) {
     private var maxScale = 2.0f
     private var minScale = 0.8f
 
+    private var backImagePath: String? = null
+    private var textureManager = LAppTextureManager(context)
+
     init {
         println("LAppView: Initializing GLSurfaceView...")
         
@@ -103,11 +106,96 @@ class LAppView(context: Context) : GLSurfaceView(context) {
         }
     }
 
+    fun setBackgroundImage(imagePath: String) {
+        println("LAppView: Setting background image: $imagePath")
+        backImagePath = imagePath
+        queueEvent {
+            println("LAppView: Creating background sprite in GL context")
+            createBackSprite()
+        }
+    }
+
+    private fun createBackSprite() {
+        backImagePath?.let { path ->
+            try {
+                println("LAppView: Starting to create background sprite")
+                
+                // 创建着色器（如果还没有创建）
+                if (shader == null) {
+                    println("LAppView: Creating shader")
+                    shader = LAppSpriteShader(context)
+                }
+                val programId = shader?.getShaderId() ?: run {
+                    println("LAppView: Failed to get shader program ID")
+                    return
+                }
+                println("LAppView: Got shader program ID: $programId")
+
+                // 加载纹理
+                val fullPath = "flutter_assets/$path"
+                println("LAppView: Loading texture from path: $fullPath")
+                val textureInfo = try {
+                    textureManager.createTextureFromPngFile(fullPath)
+                } catch (e: Exception) {
+                    println("LAppView: Failed to load texture: ${e.message}")
+                    e.printStackTrace()
+                    return
+                }
+                println("LAppView: Texture loaded with ID: ${textureInfo.id}")
+
+                // 获取窗口尺寸
+                val width = delegate.getWindowWidth()
+                val height = delegate.getWindowHeight()
+                println("LAppView: Window size: $width x $height")
+
+                // 计算背景图尺寸（保持纵横比，填满屏幕）
+                val scaleX = width.toFloat() / textureInfo.width
+                val scaleY = height.toFloat() / textureInfo.height
+                val scale = maxOf(scaleX, scaleY)
+                val scaledWidth = textureInfo.width * scale
+                val scaledHeight = textureInfo.height * scale
+                println("LAppView: Scaled dimensions: $scaledWidth x $scaledHeight")
+
+                // 创建或更新背景精灵
+                if (backSprite == null) {
+                    println("LAppView: Creating new background sprite")
+                    backSprite = LAppSprite(
+                        width * 0.5f,
+                        height * 0.5f,
+                        scaledWidth,
+                        scaledHeight,
+                        textureInfo.id,
+                        programId
+                    )
+                } else {
+                    println("LAppView: Updating existing background sprite")
+                    backSprite?.resize(
+                        width * 0.5f,
+                        height * 0.5f,
+                        scaledWidth,
+                        scaledHeight
+                    )
+                }
+                backSprite?.setWindowSize(width, height)
+                println("LAppView: Background sprite setup complete")
+            } catch (e: Exception) {
+                println("LAppView: Failed to create background sprite: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun render() {
         // 更新精灵窗口大小
         val width = delegate.getWindowWidth()
         val height = delegate.getWindowHeight()
-        renderingSprite?.setWindowSize(width, height)
+        
+        // 渲染背景
+        if (backSprite != null) {
+            println("LAppView: Rendering background sprite")
+            backSprite?.setWindowSize(width, height)
+            backSprite?.render()
+        }
 
         // 渲染模型
         delegate.run()

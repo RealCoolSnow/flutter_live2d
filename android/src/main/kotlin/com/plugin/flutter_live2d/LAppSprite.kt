@@ -40,6 +40,8 @@ class LAppSprite(
     }
 
     fun render() {
+        println("LAppSprite: Starting render")
+        
         // 设置UV坐标
         uvVertex[0] = 1.0f
         uvVertex[1] = 0.0f
@@ -67,6 +69,8 @@ class LAppSprite(
         positionVertex[6] = (rect.right - maxWidth * 0.5f) / (maxWidth * 0.5f)
         positionVertex[7] = (rect.down - maxHeight * 0.5f) / (maxHeight * 0.5f)
 
+        println("LAppSprite: Vertex positions: ${positionVertex.contentToString()}")
+
         // 创建缓冲区
         if (posVertexFloatBuffer == null) {
             val posVertexByteBuffer = ByteBuffer.allocateDirect(positionVertex.size * 4)
@@ -91,8 +95,17 @@ class LAppSprite(
         GLES20.glUniform4f(colorLocation, spriteColor[0], spriteColor[1], spriteColor[2], spriteColor[3])
 
         // 绑定纹理并绘制
+        println("LAppSprite: Binding texture ID: $textureId")
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 4)
+
+        // 检查OpenGL错误
+        val error = GLES20.glGetError()
+        if (error != GLES20.GL_NO_ERROR) {
+            println("LAppSprite: OpenGL error after render: $error")
+        } else {
+            println("LAppSprite: Render completed successfully")
+        }
     }
 
     fun setColor(r: Float, g: Float, b: Float, a: Float) {

@@ -195,4 +195,8 @@ class LAppDelegate {
     fun getContext(): Context? = context
     fun getWindowWidth(): Int = windowWidth
     fun getWindowHeight(): Int = windowHeight
+
+    fun setBackgroundImage(imagePath: String) {
+        (context as? LAppView)?.setBackgroundImage(imagePath)
+    }
 } 

@@ -25,6 +25,11 @@ class FlutterLive2d {
     return FlutterLive2dPlatform.instance.setExpression(expression);
   }
 
+  /// 设置背景图
+  static Future<void> setBackgroundImage(String imagePath) {
+    return FlutterLive2dPlatform.instance.setBackgroundImage(imagePath);
+  }
+
   /// 重置模型位置和缩放
   static Future<void> resetModel() async {
     await setScale(1.0);

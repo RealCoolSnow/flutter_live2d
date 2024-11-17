@@ -5,6 +5,12 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_live2d/flutter_live2d.dart';
 
+// 添加常量定义
+class Live2DAssets {
+  static const String MODEL_PATH = 'assets/live2d/Mao/Mao.model3.json';
+  static const String BACKGROUND_IMAGE = 'assets/live2d/back_class_normal.png';
+}
+
 void main() {
   runApp(const MyApp());
 }
@@ -29,6 +35,7 @@ class _Live2DDemoState extends State<Live2DDemo> {
   bool _isModelLoaded = false;
   double _scale = 1.0;
   String _status = "初始化中...";
+  String? _backgroundImage;
 
   @override
   void initState() {
@@ -51,8 +58,12 @@ class _Live2DDemoState extends State<Live2DDemo> {
       await Future.delayed(Duration(seconds: 1));
       print("Live2DDemo: Delay completed");
 
+      setState(() => _status = "设置背景...");
+      await FlutterLive2d.setBackgroundImage(Live2DAssets.BACKGROUND_IMAGE);
+      setState(() => _backgroundImage = Live2DAssets.BACKGROUND_IMAGE);
+
       setState(() => _status = "加载模型...");
-      await FlutterLive2d.loadModel("assets/live2d/Mao/Mao.model3.json");
+      await FlutterLive2d.loadModel(Live2DAssets.MODEL_PATH);
       print("Live2DDemo: Model loaded");
 
       setState(() {
@@ -96,9 +107,30 @@ class _Live2DDemoState extends State<Live2DDemo> {
         title: Text('Live2D Demo'),
         actions: [
           if (_isModelLoaded)
-            IconButton(
-              icon: Icon(Icons.refresh),
-              onPressed: () => FlutterLive2d.resetModel(),
+            PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (value == 'reset') {
+                  await FlutterLive2d.resetModel();
+                } else if (value == 'background') {
+                  final newBackground = _backgroundImage == null
+                      ? Live2DAssets.BACKGROUND_IMAGE
+                      : null;
+                  if (newBackground != null) {
+                    await FlutterLive2d.setBackgroundImage(newBackground);
+                  }
+                  setState(() => _backgroundImage = newBackground);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'reset',
+                  child: Text('重置模型'),
+                ),
+                PopupMenuItem(
+                  value: 'background',
+                  child: Text(_backgroundImage == null ? '显示背景' : '隐藏背景'),
+                ),
+              ],
             ),
         ],
       ),

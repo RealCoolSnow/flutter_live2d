@@ -54,4 +54,8 @@ abstract class FlutterLive2dPlatform extends PlatformInterface {
   Future<bool> isModelLoaded() {
     throw UnimplementedError('isModelLoaded() has not been implemented.');
   }
+
+  Future<void> setBackgroundImage(String imagePath) {
+    throw UnimplementedError('setBackgroundImage() has not been implemented.');
+  }
 }

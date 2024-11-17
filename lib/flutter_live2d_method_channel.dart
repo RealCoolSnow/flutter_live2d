@@ -53,4 +53,10 @@ class MethodChannelFlutterLive2d extends FlutterLive2dPlatform {
     final bool? result = await methodChannel.invokeMethod('isModelLoaded');
     return result ?? false;
   }
+
+  @override
+  Future<void> setBackgroundImage(String imagePath) async {
+    await methodChannel
+        .invokeMethod('setBackgroundImage', {'imagePath': imagePath});
+  }
 }
