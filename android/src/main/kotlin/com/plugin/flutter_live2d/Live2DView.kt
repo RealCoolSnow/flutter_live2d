@@ -9,11 +9,19 @@ import com.live2d.sdk.cubism.framework.math.CubismMatrix44
 import com.live2d.sdk.cubism.framework.math.CubismViewMatrix
 
 class Live2DView(context: Context) : GLSurfaceView(context) {
+    // 添加渲染目标枚举
+    enum class RenderingTarget {
+        NONE,                   // 默认帧缓冲
+        MODEL_FRAME_BUFFER,     // 每个模型自己的帧缓冲
+        VIEW_FRAME_BUFFER      // View持有的帧缓冲
+    }
+
     private var delegate: Live2DDelegate = Live2DDelegate.getInstance()
     private val renderer: GLRenderer
     private var shader: Live2DShader? = null
     private var backSprite: Sprite? = null
     private var renderingSprite: Sprite? = null
+    private var renderingTarget = RenderingTarget.NONE
     
     // 视图矩阵相关
     private val viewMatrix = CubismViewMatrix()
@@ -105,11 +113,23 @@ class Live2DView(context: Context) : GLSurfaceView(context) {
         delegate.run()
 
         // 如果使用单独的渲染目标，渲染精灵
-        renderingSprite?.let { sprite ->
+        if (renderingTarget != RenderingTarget.NONE && renderingSprite != null) {
             val model = delegate.getLive2DManager()?.getModel()
             if (model != null) {
-                sprite.setColor(1.0f, 1.0f, 1.0f, model.getOpacity())
-                sprite.render()
+                // 设置精灵的颜色和透明度
+                renderingSprite?.setColor(1.0f, 1.0f, 1.0f, 1.0f)
+                
+                // 使用着色器
+                shader?.let { shader ->
+                    GLES20.glUseProgram(shader.getShaderId())
+                    
+                    // 设置纹理
+                    GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+                    GLES20.glUniform1i(shader.getTextureLocation(), 0)
+                }
+                
+                // 渲染精灵
+                renderingSprite?.render()
             }
         }
     }
@@ -146,5 +166,10 @@ class Live2DView(context: Context) : GLSurfaceView(context) {
         println("Live2DView: Disposing...")
         delegate.onStop()
         shader?.dispose()
+    }
+
+    // 添加切换渲染目标的方法
+    fun switchRenderingTarget(target: RenderingTarget) {
+        renderingTarget = target
     }
 } 

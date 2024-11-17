@@ -76,7 +76,7 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
                     continue
                 }
 
-                // 加载纹理 - 添加 flutter_assets 前缀
+                // 加载理 - 添加 flutter_assets 前缀
                 val fullPath = "flutter_assets/$modelHomeDirectory$texturePath"
                 println("Live2DModel: Loading texture: $fullPath")
                 
@@ -141,8 +141,8 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
                     GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
                     GLES20.glUniform1i(shader.getTextureLocation(), 0)
                     
-                    // 设置基础颜色
-                    GLES20.glUniform4f(shader.getBaseColorLocation(), 1.0f, 1.0f, 1.0f, 1.0f)
+                    // 设置基础颜色（包括透明度）
+                    GLES20.glUniform4f(shader.getBaseColorLocation(), 1.0f, 1.0f, 1.0f, getOpacity())
                     
                     // 合并用户矩阵和投影矩阵
                     val drawMatrix = CubismMatrix44.create()
@@ -167,6 +167,10 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
             println("Live2DModel: Error drawing model: ${e.message}")
             e.printStackTrace()
         }
+    }
+
+    override fun getOpacity(): Float {
+        return model?.getModelOpacity() ?: 1.0f
     }
 
     fun setScale(scale: Float) {

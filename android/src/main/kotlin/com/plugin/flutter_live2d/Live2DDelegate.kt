@@ -53,6 +53,9 @@ class Live2DDelegate {
         println("Live2DDelegate: onStart")
         this.context = context
         live2dManager = Live2DManager()
+        
+        // 设置渲染目标为默认
+        (context as? Live2DView)?.switchRenderingTarget(Live2DView.RenderingTarget.NONE)
     }
 
     fun onStop() {
