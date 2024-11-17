@@ -24,6 +24,7 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
     private var modelPositionY = 0.0f
     private val userModelMatrix = CubismMatrix44.create()
     private lateinit var textureManager: TextureManager
+    private lateinit var shader: Live2DShader
 
     init {
         textureManager = TextureManager(context)
@@ -57,6 +58,12 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
         
         // Setup textures
         setupTextures()
+        
+        // 创建着色器程序
+        shader = Live2DShader(context)
+        if (shader.getShaderId() == 0) {
+            throw RuntimeException("Failed to create shader program")
+        }
     }
 
     private fun setupTextures() {
@@ -80,7 +87,10 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
                 println("Live2DModel: Loading texture: $fullPath")
                 
                 val textureInfo = textureManager.createTextureFromPngFile(fullPath)
+                
+                // 绑定纹理到渲染器
                 renderer.bindTexture(modelTextureNumber, textureInfo.id)
+                
                 println("Live2DModel: Texture $modelTextureNumber bound to GL texture ${textureInfo.id}")
             }
             
@@ -121,10 +131,12 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
     }
 
     fun draw(matrix: CubismMatrix44) {
-        println("Live2DModel: Drawing with matrix")
         try {
             val renderer = getRenderer() as? CubismRendererAndroid
             if (renderer != null) {
+                // 使用着色器程序
+                GLES20.glUseProgram(shader.getShaderId())
+                
                 // 合并用户矩阵和投影矩阵
                 val drawMatrix = CubismMatrix44.create()
                 CubismMatrix44.multiply(userModelMatrix.getArray(), matrix.getArray(), drawMatrix.getArray())
@@ -132,13 +144,9 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
                 // 设置MVP矩阵并绘制
                 renderer.setMvpMatrix(drawMatrix)
                 renderer.drawModel()
-                println("Live2DModel: Model drawn successfully")
-            } else {
-                println("Live2DModel: No renderer available")
             }
         } catch (e: Exception) {
-            println("Live2DModel: Error drawing model")
-            e.printStackTrace()
+            println("Live2DModel: Error drawing model: ${e.message}")
         }
     }
 
@@ -320,6 +328,13 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
             // 清除引用
             modelSetting = null
             model = null
+            
+            // 删除着色器程序
+            if (shader.getShaderId() != 0) {
+                GLES20.glDeleteProgram(shader.getShaderId())
+            }
+            
+            shader.dispose()
             
             println("Live2DModel: Disposed successfully")
         } catch (e: Exception) {

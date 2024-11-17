@@ -46,27 +46,19 @@ class Live2DManager {
 
     fun onUpdate() {
         model?.let { model ->
-            println("Live2DManager: Updating model")
-            // 更新模型
-            model.update()
-            
-            // 绘制模型
+            // 更新投影矩阵
             projection.loadIdentity()
-            println("Live2DManager: Model canvas width: ${model.getModel()?.getCanvasWidth()}")
+            
             if (model.getModel()?.getCanvasWidth() ?: 0f > 1.0f && windowWidth < windowHeight) {
-                // 横向模型在竖屏显示时的处理
-                println("Live2DManager: Adjusting for portrait mode")
                 model.getModelMatrix()?.scale(2.0f, 2.0f)
                 projection.scale(1.0f, windowWidth.toFloat() / windowHeight.toFloat())
             } else {
-                println("Live2DManager: Using default scaling")
                 projection.scale(windowHeight.toFloat() / windowWidth.toFloat(), 1.0f)
             }
             
-            println("Live2DManager: Drawing model")
+            // 更新和绘制模型
+            model.update()
             model.draw(projection)
-        } ?: run {
-            println("Live2DManager: No model to update")
         }
     }
 

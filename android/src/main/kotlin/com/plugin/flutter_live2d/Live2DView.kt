@@ -8,11 +8,10 @@ import android.view.MotionEvent
 import com.live2d.sdk.cubism.framework.CubismFramework
 import com.live2d.sdk.cubism.framework.CubismFrameworkConfig.LogLevel
 import com.live2d.sdk.cubism.core.ICubismLogger
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
 
-class Live2DView(context: Context) : GLSurfaceView(context), GLSurfaceView.Renderer {
+class Live2DView(context: Context) : GLSurfaceView(context) {
     private var delegate: Live2DDelegate = Live2DDelegate.getInstance()
+    private val renderer: GLRenderer
 
     init {
         println("Live2DView: Initializing GLSurfaceView...")
@@ -25,31 +24,14 @@ class Live2DView(context: Context) : GLSurfaceView(context), GLSurfaceView.Rende
         holder.setFormat(PixelFormat.TRANSLUCENT)
         
         // 设置渲染器
-        setRenderer(this)
+        renderer = GLRenderer()
+        setRenderer(renderer)
+        
+        // 设置渲染模式为连续渲染
         renderMode = RENDERMODE_CONTINUOUSLY
 
         // 初始化Live2D
         delegate.onStart(context)
-    }
-
-    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        println("Live2DView: Surface created")
-        // 设置浅蓝色背景，方便调试
-        GLES20.glClearColor(0.9f, 0.9f, 1.0f, 1.0f)
-        delegate.onSurfaceCreated()
-    }
-
-    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        println("Live2DView: Surface changed: $width x $height")
-        GLES20.glViewport(0, 0, width, height)
-        delegate.onSurfaceChanged(width, height)
-    }
-
-    override fun onDrawFrame(gl: GL10?) {
-        // 清除缓冲区
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-        println("Live2DView: Drawing frame")
-        delegate.run()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

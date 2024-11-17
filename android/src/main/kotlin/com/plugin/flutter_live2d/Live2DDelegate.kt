@@ -61,7 +61,7 @@ class Live2DDelegate {
     fun onSurfaceCreated() {
         println("Live2DDelegate: onSurfaceCreated")
         // 设置OpenGL状态
-        GLES20.glClearColor(0.9f, 0.9f, 1.0f, 1.0f)
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
         
@@ -108,7 +108,12 @@ class Live2DDelegate {
     fun run() {
         // 清除缓冲区
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-        println("Live2DDelegate: Running frame")
+        
+        // 检查OpenGL错误
+        val error = GLES20.glGetError()
+        if (error != GLES20.GL_NO_ERROR) {
+            println("Live2DDelegate: OpenGL error: $error")
+        }
         
         // 更新和绘制模型
         live2dManager?.onUpdate()
