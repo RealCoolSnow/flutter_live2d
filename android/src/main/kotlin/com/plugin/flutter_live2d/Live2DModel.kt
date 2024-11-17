@@ -24,7 +24,7 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
     private var modelPositionY = 0.0f
     private val userModelMatrix = CubismMatrix44.create()
     private lateinit var textureManager: TextureManager
-    private lateinit var shader: Live2DShader
+    private var shader: Live2DShader? = null
 
     init {
         textureManager = TextureManager(context)
@@ -58,12 +58,6 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
         
         // Setup textures
         setupTextures()
-        
-        // 创建着色器程序
-        shader = Live2DShader(context)
-        if (shader.getShaderId() == 0) {
-            throw RuntimeException("Failed to create shader program")
-        }
     }
 
     private fun setupTextures() {
@@ -134,8 +128,15 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
         try {
             val renderer = getRenderer() as? CubismRendererAndroid
             if (renderer != null) {
+                // 确保着色器已创建
+                if (shader == null) {
+                    initializeShader()
+                }
+                
                 // 使用着色器程序
-                GLES20.glUseProgram(shader.getShaderId())
+                shader?.getShaderId()?.let { shaderId ->
+                    GLES20.glUseProgram(shaderId)
+                }
                 
                 // 合并用户矩阵和投影矩阵
                 val drawMatrix = CubismMatrix44.create()
@@ -330,16 +331,24 @@ class Live2DModel(private val context: Context) : CubismUserModel() {
             model = null
             
             // 删除着色器程序
-            if (shader.getShaderId() != 0) {
-                GLES20.glDeleteProgram(shader.getShaderId())
+            if (shader?.getShaderId() != 0) {
+                GLES20.glDeleteProgram(shader?.getShaderId()!!)
             }
             
-            shader.dispose()
+            shader?.dispose()
             
             println("Live2DModel: Disposed successfully")
         } catch (e: Exception) {
             println("Live2DModel: Error during disposal")
             e.printStackTrace()
+        }
+    }
+
+    fun initializeShader() {
+        // 在OpenGL上下文中创建着色器
+        shader = Live2DShader(context)
+        if (shader?.getShaderId() == 0) {
+            throw RuntimeException("Failed to create shader program")
         }
     }
 } 

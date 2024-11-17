@@ -19,19 +19,25 @@ class Live2DView(context: Context) : GLSurfaceView(context) {
         // 设置OpenGL ES 2.0
         setEGLContextClientVersion(2)
         
-        // 设置透明背景
+        // 设置EGL配置
         setEGLConfigChooser(8, 8, 8, 8, 16, 0)
         holder.setFormat(PixelFormat.TRANSLUCENT)
         
-        // 设置渲染器
+        // 创建渲染器
         renderer = GLRenderer()
+        
+        // 设置渲染器
         setRenderer(renderer)
         
         // 设置渲染模式为连续渲染
         renderMode = RENDERMODE_CONTINUOUSLY
 
-        // 初始化Live2D
-        delegate.onStart(context)
+        // 等待OpenGL上下文创建完成
+        queueEvent {
+            println("Live2DView: OpenGL context created")
+            // 初始化Live2D
+            delegate.onStart(context)
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
