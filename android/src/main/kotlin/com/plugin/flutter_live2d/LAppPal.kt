@@ -15,10 +15,6 @@ object LAppPal {
         }
     }
 
-    // fun moveTaskToBack() {
-    //     LAppDelegate.getInstance().getActivity().moveTaskToBack(true)
-    // }
-
     fun updateTime() {
         s_currentFrame = getSystemNanoTime()
         _deltaNanoTime = s_currentFrame - _lastNanoTime
@@ -31,6 +27,21 @@ object LAppPal {
 
     fun printLog(message: String) {
         Log.d(TAG, message)
+    }
+
+    fun loadFileAsBytes(path: String): ByteArray {
+        try {
+            val delegate = LAppDelegate.getInstance()
+            val context = delegate.getContext() ?: throw RuntimeException("Context is null")
+            
+            context.assets.open(path).use { inputStream ->
+                return inputStream.readBytes()
+            }
+        } catch (e: Exception) {
+            printLog("Failed to load file: $path")
+            e.printStackTrace()
+            return ByteArray(0)
+        }
     }
 
     private fun getSystemNanoTime(): Double {

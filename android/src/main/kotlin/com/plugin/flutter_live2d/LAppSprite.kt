@@ -40,17 +40,11 @@ class LAppSprite(
     }
 
     fun render() {
-        println("LAppSprite: Starting render")
-        
         // 设置UV坐标
-        uvVertex[0] = 1.0f
-        uvVertex[1] = 0.0f
-        uvVertex[2] = 0.0f
-        uvVertex[3] = 0.0f
-        uvVertex[4] = 0.0f
-        uvVertex[5] = 1.0f
-        uvVertex[6] = 1.0f
-        uvVertex[7] = 1.0f
+        uvVertex[0] = 1.0f; uvVertex[1] = 0.0f
+        uvVertex[2] = 0.0f; uvVertex[3] = 0.0f
+        uvVertex[4] = 0.0f; uvVertex[5] = 1.0f
+        uvVertex[6] = 1.0f; uvVertex[7] = 1.0f
 
         // 启用顶点属性
         GLES20.glEnableVertexAttribArray(positionLocation)
@@ -60,18 +54,36 @@ class LAppSprite(
         GLES20.glUniform1i(textureLocation, 0)
 
         // 设置顶点坐标
-        positionVertex[0] = (rect.right - maxWidth * 0.5f) / (maxWidth * 0.5f)
-        positionVertex[1] = (rect.up - maxHeight * 0.5f) / (maxHeight * 0.5f)
-        positionVertex[2] = (rect.left - maxWidth * 0.5f) / (maxWidth * 0.5f)
-        positionVertex[3] = (rect.up - maxHeight * 0.5f) / (maxHeight * 0.5f)
-        positionVertex[4] = (rect.left - maxWidth * 0.5f) / (maxWidth * 0.5f)
-        positionVertex[5] = (rect.down - maxHeight * 0.5f) / (maxHeight * 0.5f)
-        positionVertex[6] = (rect.right - maxWidth * 0.5f) / (maxWidth * 0.5f)
-        positionVertex[7] = (rect.down - maxHeight * 0.5f) / (maxHeight * 0.5f)
+        val halfWidth = maxWidth * 0.5f
+        val halfHeight = maxHeight * 0.5f
+        positionVertex[0] = (rect.right - halfWidth) / halfWidth
+        positionVertex[1] = (rect.up - halfHeight) / halfHeight
+        positionVertex[2] = (rect.left - halfWidth) / halfWidth
+        positionVertex[3] = (rect.up - halfHeight) / halfHeight
+        positionVertex[4] = (rect.left - halfWidth) / halfWidth
+        positionVertex[5] = (rect.down - halfHeight) / halfHeight
+        positionVertex[6] = (rect.right - halfWidth) / halfWidth
+        positionVertex[7] = (rect.down - halfHeight) / halfHeight
 
-        println("LAppSprite: Vertex positions: ${positionVertex.contentToString()}")
+        // 创建和更新缓冲区
+        updateBuffers()
 
-        // 创建缓冲区
+        // 设置顶点属性
+        GLES20.glVertexAttribPointer(positionLocation, 2, GLES20.GL_FLOAT, false, 0, posVertexFloatBuffer)
+        GLES20.glVertexAttribPointer(uvLocation, 2, GLES20.GL_FLOAT, false, 0, uvVertexFloatBuffer)
+
+        // 设置颜色
+        GLES20.glUniform4f(colorLocation, spriteColor[0], spriteColor[1], spriteColor[2], spriteColor[3])
+
+        // 绑定纹理并绘制
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 4)
+
+        // 检查OpenGL错误
+        checkGLError("Sprite render")
+    }
+
+    private fun updateBuffers() {
         if (posVertexFloatBuffer == null) {
             val posVertexByteBuffer = ByteBuffer.allocateDirect(positionVertex.size * 4)
             posVertexByteBuffer.order(ByteOrder.nativeOrder())
@@ -83,28 +95,14 @@ class LAppSprite(
             uvVertexFloatBuffer = uvVertexByteBuffer.asFloatBuffer()
         }
 
-        // 更新缓冲区数据
         posVertexFloatBuffer?.put(positionVertex)?.position(0)
         uvVertexFloatBuffer?.put(uvVertex)?.position(0)
+    }
 
-        // 设置顶点属性
-        GLES20.glVertexAttribPointer(positionLocation, 2, GLES20.GL_FLOAT, false, 0, posVertexFloatBuffer)
-        GLES20.glVertexAttribPointer(uvLocation, 2, GLES20.GL_FLOAT, false, 0, uvVertexFloatBuffer)
-
-        // 设置颜色
-        GLES20.glUniform4f(colorLocation, spriteColor[0], spriteColor[1], spriteColor[2], spriteColor[3])
-
-        // 绑定纹理并绘制
-        println("LAppSprite: Binding texture ID: $textureId")
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 4)
-
-        // 检查OpenGL错误
+    private fun checkGLError(operation: String) {
         val error = GLES20.glGetError()
         if (error != GLES20.GL_NO_ERROR) {
-            println("LAppSprite: OpenGL error after render: $error")
-        } else {
-            println("LAppSprite: Render completed successfully")
+            println("LAppSprite: GL Error after $operation: $error")
         }
     }
 
@@ -128,7 +126,6 @@ class LAppSprite(
     }
 
     fun isHit(pointX: Float, pointY: Float): Boolean {
-        // y坐标需要转换
         val y = maxHeight - pointY
         return (pointX >= rect.left && pointX <= rect.right && y <= rect.up && y >= rect.down)
     }
@@ -139,4 +136,4 @@ class LAppSprite(
         var up: Float = 0f,
         var down: Float = 0f
     )
-} 
+}

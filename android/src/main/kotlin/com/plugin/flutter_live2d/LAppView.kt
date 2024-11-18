@@ -17,7 +17,7 @@ class LAppView(context: Context) : GLSurfaceView(context) {
     }
 
     private var delegate: LAppDelegate = LAppDelegate.getInstance()
-    private val renderer: GLRenderer
+    private val renderer: GLRenderer = GLRenderer()
     private var shader: LAppSpriteShader? = null
     private var backSprite: LAppSprite? = null
     private var renderingSprite: LAppSprite? = null
@@ -26,11 +26,7 @@ class LAppView(context: Context) : GLSurfaceView(context) {
     // 视图矩阵相关
     private val viewMatrix = CubismViewMatrix()
     private val deviceToScreen = CubismMatrix44.create()
-    private var maxScale = 2.0f
-    private var minScale = 0.8f
-
-    private var backImagePath: String? = null
-    private var textureManager = LAppTextureManager(context)
+    private val touchManager = TouchManager()
 
     init {
         println("LAppView: Initializing GLSurfaceView...")
@@ -43,9 +39,6 @@ class LAppView(context: Context) : GLSurfaceView(context) {
         holder.setFormat(PixelFormat.TRANSLUCENT)
         
         // 创建渲染器
-        renderer = GLRenderer()
-        
-        // 设置渲染器
         setRenderer(renderer)
         
         // 设置渲染模式为连续渲染
@@ -72,49 +65,32 @@ class LAppView(context: Context) : GLSurfaceView(context) {
         }
     }
 
-    private fun initialize() {
-        // 创建着色器
-        shader = LAppSpriteShader(context)
-        val programId = shader?.getShaderId() ?: return
-
+    fun initialize() {
         val width = delegate.getWindowWidth()
         val height = delegate.getWindowHeight()
 
         // 设置视图矩阵
         val ratio = width.toFloat() / height.toFloat()
-        val left = -ratio
-        val right = ratio
-        val bottom = -1.0f
-        val top = 1.0f
+        viewMatrix.setScreenRect(-ratio, ratio, -1.0f, 1.0f)
+        viewMatrix.scale(LAppDefine.Scale.DEFAULT.value, LAppDefine.Scale.DEFAULT.value)
 
-        viewMatrix.setScreenRect(left, right, bottom, top)
-        viewMatrix.scale(1.0f, 1.0f)
-        viewMatrix.setMaxScale(maxScale)
-        viewMatrix.setMinScale(minScale)
-        viewMatrix.setMaxScreenRect(-2.0f, 2.0f, -2.0f, 2.0f)
+        // 设置最大/最小缩放
+        viewMatrix.setMaxScale(LAppDefine.Scale.MAX.value)
+        viewMatrix.setMinScale(LAppDefine.Scale.MIN.value)
 
-        // 设置设备到屏幕的转换矩阵
+        // 设置设备到屏幕的转换
         deviceToScreen.loadIdentity()
         if (width > height) {
-            val screenW = Math.abs(right - left)
+            val screenW = Math.abs(2.0f)
             deviceToScreen.scaleRelative(screenW / width, -screenW / width)
         } else {
-            val screenH = Math.abs(top - bottom)
+            val screenH = Math.abs(2.0f)
             deviceToScreen.scaleRelative(screenH / height, -screenH / height)
         }
         deviceToScreen.translateRelative(-width * 0.5f, -height * 0.5f)
 
-        // 创建渲染精灵
-        renderingSprite = LAppSprite(
-            width * 0.5f,
-            height * 0.5f,
-            width.toFloat(),
-            height.toFloat(),
-            0,
-            programId
-        ).apply {
-            setWindowSize(width, height)
-        }
+        // 创建着色器
+        shader = LAppSpriteShader(context)
     }
 
     fun setBackgroundImage(imagePath: String) {
@@ -210,27 +186,6 @@ class LAppView(context: Context) : GLSurfaceView(context) {
 
         // 渲染模型
         delegate.run()
-
-        // 如果使用单独的渲染目标，渲染精灵
-        if (renderingTarget != RenderingTarget.NONE && renderingSprite != null) {
-            val model = delegate.getLAppLive2DManager()?.getModel()
-            if (model != null) {
-                // 设置精灵的颜色和透明度
-                renderingSprite?.setColor(1.0f, 1.0f, 1.0f, 1.0f)
-                
-                // 使用着色器
-                shader?.let { shader ->
-                    GLES20.glUseProgram(shader.getShaderId())
-                    
-                    // 设置纹理
-                    GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-                    GLES20.glUniform1i(shader.getTextureLocation(), 0)
-                }
-                
-                // 渲染精灵
-                renderingSprite?.render()
-            }
-        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

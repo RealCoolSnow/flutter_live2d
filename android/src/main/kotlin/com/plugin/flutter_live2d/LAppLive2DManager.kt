@@ -4,93 +4,33 @@ import android.content.Context
 import com.live2d.sdk.cubism.framework.math.CubismMatrix44
 import com.live2d.sdk.cubism.framework.math.CubismViewMatrix
 
-class LAppLive2DManager {
+class LAppLive2DManager(private val context: Context) {
+    companion object {
+        private var instance: LAppLive2DManager? = null
+        
+        fun getInstance(context: Context): LAppLive2DManager {
+            if (instance == null) {
+                instance = LAppLive2DManager(context)
+            }
+            return instance!!
+        }
+
+        fun releaseInstance() {
+            instance = null
+        }
+    }
+
     private var model: LAppModel? = null
-    private val viewMatrix = CubismViewMatrix()
-    private val deviceToScreen = CubismMatrix44.create()
     private val projection = CubismMatrix44.create()
-    private var windowWidth = 0
-    private var windowHeight = 0
+    private val viewMatrix = CubismMatrix44.create()
 
-    fun loadModel(context: Context, modelPath: String) {
-        println("LAppLive2DManager: Loading model: $modelPath")
-        try {
-            val lastSlash = modelPath.lastIndexOf('/')
-            val dir = modelPath.substring(0, lastSlash + 1)
-            val fileName = modelPath.substring(lastSlash + 1)
-            
-            // 释放旧模型
-            model?.dispose()
-            
-            // 创建新模型
-            model = LAppModel(context).apply {
-                loadAssets(dir, fileName)
-            }
-            
-            // 更新投影矩阵
-            updateProjection()
-            
-            println("LAppLive2DManager: Model loaded successfully")
-        } catch (e: Exception) {
-            println("LAppLive2DManager: Failed to load model")
-            e.printStackTrace()
-        }
-    }
-
-    fun onSurfaceChanged(width: Int, height: Int) {
-        println("LAppLive2DManager: Surface changed width: $width, height: $height")
-        windowWidth = width
-        windowHeight = height
-        updateProjection()
-    }
-
-    fun onUpdate() {
-        model?.let { model ->
-            // 更新投影矩阵
-            projection.loadIdentity()
-            
-            if (model.getModel()?.getCanvasWidth() ?: 0f > 1.0f && windowWidth < windowHeight) {
-                model.getModelMatrix()?.scale(2.0f, 2.0f)
-                projection.scale(1.0f, windowWidth.toFloat() / windowHeight.toFloat())
-            } else {
-                projection.scale(windowHeight.toFloat() / windowWidth.toFloat(), 1.0f)
-            }
-            
-            // 更新和绘制模型
-            model.update()
-            model.draw(projection)
-        }
-    }
-
-    fun onDrag(x: Float, y: Float) {
-        model?.setDragging(x, y)
-    }
-
-    fun onTap(x: Float, y: Float) {
-        model?.let { model ->
-            // 检查头部点击
-            if (model.hitTest("Head", x, y)) {
-                model.setRandomExpression()
-            }
-            // 检查身体点击
-            else if (model.hitTest("Body", x, y)) {
-                model.startRandomMotion("TapBody", 0)
-            }
-        }
-    }
-
-    private fun updateProjection() {
-        model?.let { model ->
-            projection.loadIdentity()
-            
-            // 根据模型和屏幕尺寸调整投影
-            if (model.getModel()?.getCanvasWidth() ?: 0f > 1.0f && windowWidth < windowHeight) {
-                model.getModelMatrix()?.scale(2.0f, 2.0f)
-                projection.scale(1.0f, windowWidth.toFloat() / windowHeight.toFloat())
-            } else {
-                projection.scale(windowHeight.toFloat() / windowWidth.toFloat(), 1.0f)
-            }
-        }
+    fun loadModel(modelPath: String) {
+        println("LAppLive2DManager: Loading model from $modelPath")
+        releaseModel()
+        
+        // 创建新模型
+        model = LAppModel(context)
+        model?.loadAssets(getModelDir(modelPath), getModelFile(modelPath))
     }
 
     fun setScale(scale: Float) {
@@ -102,16 +42,56 @@ class LAppLive2DManager {
     }
 
     fun startMotion(group: String, index: Int) {
-        model?.startMotion(group, index)
+        model?.startMotion(group, index, LAppDefine.Priority.NORMAL.priority)
     }
 
     fun setExpression(expression: String) {
         model?.setExpression(expression)
     }
 
-    fun isModelLoaded(): Boolean {
-        return model != null
+    fun onUpdate() {
+        val width = LAppDelegate.getInstance().getWindowWidth()
+        val height = LAppDelegate.getInstance().getWindowHeight()
+
+        // 更新投影矩阵
+        projection.loadIdentity()
+        if (model?.getModel()?.canvasWidth ?: 0f > 1.0f && width < height) {
+            model?.getModelMatrix()?.setWidth(2.0f)
+            projection.scale(1.0f, width.toFloat() / height.toFloat())
+        } else {
+            projection.scale(height.toFloat() / width.toFloat(), 1.0f)
+        }
+
+        // 更新视图矩阵
+        viewMatrix?.let {
+            it.multiplyByMatrix(projection)
+        }
+
+        // 更新模型
+        model?.update()
+        model?.draw(projection)
     }
 
-    fun getModel(): LAppModel? = model
+    fun onDrag(x: Float, y: Float) {
+        model?.setDragging(x, y)
+    }
+
+    fun onTap(x: Float, y: Float) {
+        model?.hitTest(LAppDefine.HitAreaName.BODY.id, x, y)?.let {
+            model?.startRandomMotion(LAppDefine.MotionGroup.TAP_BODY.id, LAppDefine.Priority.NORMAL.priority)
+        }
+    }
+
+    private fun releaseModel() {
+        model?.release()
+        model = null
+    }
+
+    private fun getModelDir(modelPath: String): String {
+        return modelPath.substringBeforeLast("/") + "/"
+    }
+
+    private fun getModelFile(modelPath: String): String {
+        return modelPath.substringAfterLast("/")
+    }
 } 

@@ -33,4 +33,4 @@ class Live2DPlatformView(
         println("Live2DPlatformView: Disposing view $viewId")
         view.dispose()
     }
-} 
+}

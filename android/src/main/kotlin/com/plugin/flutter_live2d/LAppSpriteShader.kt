@@ -32,14 +32,11 @@ class LAppSpriteShader(private val context: Context) {
         }
     }
 
-    fun getShaderId(): Int = programId
-
     private fun createShader(): Int {
         try {
             // 编译顶点着色器
             Log.d(TAG, "Compiling vertex shader...")
             val vertShaderPath = "$SHADER_PATH/$VERT_SHADER"
-            Log.d(TAG, "Loading vertex shader from: $vertShaderPath")
             val vertexShaderId = compileShader(vertShaderPath, GLES20.GL_VERTEX_SHADER)
             if (vertexShaderId == 0) {
                 Log.e(TAG, "Failed to compile vertex shader")
@@ -49,7 +46,6 @@ class LAppSpriteShader(private val context: Context) {
             // 编译片段着色器
             Log.d(TAG, "Compiling fragment shader...")
             val fragShaderPath = "$SHADER_PATH/$FRAG_SHADER"
-            Log.d(TAG, "Loading fragment shader from: $fragShaderPath")
             val fragmentShaderId = compileShader(fragShaderPath, GLES20.GL_FRAGMENT_SHADER)
             if (fragmentShaderId == 0) {
                 GLES20.glDeleteShader(vertexShaderId)
@@ -68,7 +64,7 @@ class LAppSpriteShader(private val context: Context) {
             GLES20.glAttachShader(programId, vertexShaderId)
             GLES20.glAttachShader(programId, fragmentShaderId)
 
-            // 绑定属性位置 - 必须在链接之前
+            // 绑定属性位置
             GLES20.glBindAttribLocation(programId, 0, "position")
             GLES20.glBindAttribLocation(programId, 1, "uv")
 
@@ -143,28 +139,6 @@ class LAppSpriteShader(private val context: Context) {
         }
     }
 
-    private fun checkShader(shaderId: Int): Boolean {
-        // 获取日志长度
-        val logLength = IntArray(1)
-        GLES20.glGetShaderiv(shaderId, GLES20.GL_INFO_LOG_LENGTH, logLength, 0)
-
-        if (logLength[0] > 0) {
-            val log = GLES20.glGetShaderInfoLog(shaderId)
-            Log.e(TAG, "Shader compile log: $log")
-        }
-
-        // 获取编译状态
-        val status = IntArray(1)
-        GLES20.glGetShaderiv(shaderId, GLES20.GL_COMPILE_STATUS, status, 0)
-
-        if (status[0] == GLES20.GL_FALSE) {
-            GLES20.glDeleteShader(shaderId)
-            return false
-        }
-
-        return true
-    }
-
     fun dispose() {
         if (programId != 0) {
             GLES20.glDeleteProgram(programId)
@@ -172,6 +146,7 @@ class LAppSpriteShader(private val context: Context) {
         }
     }
 
+    fun getShaderId(): Int = programId
     fun getPositionLocation(): Int = positionLocation
     fun getUvLocation(): Int = uvLocation
     fun getTextureLocation(): Int = textureLocation

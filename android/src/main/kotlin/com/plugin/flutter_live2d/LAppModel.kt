@@ -16,6 +16,7 @@ import com.live2d.sdk.cubism.framework.rendering.CubismRenderer
 import android.opengl.GLES20
 
 class LAppModel(private val context: Context) : CubismUserModel() {
+    private var model: CubismModel? = null
     private var modelSetting: ICubismModelSetting? = null
     private var modelHomeDirectory: String = ""
     private var userTimeSeconds: Float = 0.0f
@@ -23,11 +24,15 @@ class LAppModel(private val context: Context) : CubismUserModel() {
     private var modelPositionX = 0.0f
     private var modelPositionY = 0.0f
     private val userModelMatrix = CubismMatrix44.create()
-    private lateinit var LAppTextureManager: LAppTextureManager
+    private var textureManager: LAppTextureManager = LAppTextureManager(context)
     private var shader: LAppSpriteShader? = null
 
     init {
-        LAppTextureManager = LAppTextureManager(context)
+        if (LAppDefine.MOC_CONSISTENCY_VALIDATION_ENABLE) {
+            mocConsistency = true
+        }
+
+        CubismIdManager.registerIds()
     }
 
     fun loadAssets(dir: String, fileName: String) {
@@ -76,11 +81,11 @@ class LAppModel(private val context: Context) : CubismUserModel() {
                     continue
                 }
 
-                // 加载理 - 添加 flutter_assets 前缀
+                // 加载纹理 - 添加 flutter_assets 前缀
                 val fullPath = "flutter_assets/$modelHomeDirectory$texturePath"
                 println("LAppModel: Loading texture: $fullPath")
                 
-                val textureInfo = LAppTextureManager.createTextureFromPngFile(fullPath)
+                val textureInfo = textureManager.createTextureFromPngFile(fullPath)
                 
                 // 绑定纹理到渲染器
                 renderer.bindTexture(modelTextureNumber, textureInfo.id)
@@ -96,7 +101,7 @@ class LAppModel(private val context: Context) : CubismUserModel() {
     }
 
     fun update() {
-        val deltaTimeSeconds = 1.0f / 60.0f
+        val deltaTimeSeconds = LAppPal.getDeltaTime()
         userTimeSeconds += deltaTimeSeconds
 
         // Update model parameters
@@ -108,19 +113,12 @@ class LAppModel(private val context: Context) : CubismUserModel() {
         // Update model
         model?.saveParameters()
 
-        // Eye blink
-        eyeBlink?.updateParameters(model, deltaTimeSeconds)
-        
-        // Breath
-        breath?.updateParameters(model, deltaTimeSeconds)
-
-        // Physics
+        // Update physics
         physics?.evaluate(model, deltaTimeSeconds)
 
         // Update pose
         pose?.updateParameters(model, deltaTimeSeconds)
 
-        // Update model
         model?.update()
     }
 
@@ -137,13 +135,6 @@ class LAppModel(private val context: Context) : CubismUserModel() {
                     // 使用着色器程序
                     GLES20.glUseProgram(shader.getShaderId())
                     
-                    // 设置纹理
-                    GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-                    GLES20.glUniform1i(shader.getTextureLocation(), 0)
-                    
-                    // 设置基础颜色（包括透明度）
-                    GLES20.glUniform4f(shader.getBaseColorLocation(), 1.0f, 1.0f, 1.0f, getOpacity())
-                    
                     // 合并用户矩阵和投影矩阵
                     val drawMatrix = CubismMatrix44.create()
                     CubismMatrix44.multiply(userModelMatrix.getArray(), matrix.getArray(), drawMatrix.getArray())
@@ -151,26 +142,14 @@ class LAppModel(private val context: Context) : CubismUserModel() {
                     // 设置MVP矩阵
                     renderer.setMvpMatrix(drawMatrix)
                     
-                    // 启用顶点属性
-                    GLES20.glEnableVertexAttribArray(shader.getPositionLocation())
-                    GLES20.glEnableVertexAttribArray(shader.getUvLocation())
-                    
                     // 绘制模型
                     renderer.drawModel()
-                    
-                    // 禁用顶点属性
-                    GLES20.glDisableVertexAttribArray(shader.getPositionLocation())
-                    GLES20.glDisableVertexAttribArray(shader.getUvLocation())
                 }
             }
         } catch (e: Exception) {
             println("LAppModel: Error drawing model: ${e.message}")
             e.printStackTrace()
         }
-    }
-
-    override fun getOpacity(): Float {
-        return model?.getModelOpacity() ?: 1.0f
     }
 
     fun setScale(scale: Float) {
@@ -190,187 +169,19 @@ class LAppModel(private val context: Context) : CubismUserModel() {
         userModelMatrix.translate(modelPositionX, modelPositionY)
     }
 
-    fun startMotion(group: String, index: Int, priority: Int = 0) {
-        modelSetting?.let { setting ->
-            val fileName = setting.getMotionFileName(group, index)
-            if (fileName.isNotEmpty()) {
-                val path = modelHomeDirectory + fileName
-                val buffer = createBuffer(path)
-                val motion = loadMotion(buffer)
-                motion?.let {
-                    motionManager.startMotionPriority(it, priority)
-                }
-            }
-        }
-    }
-
-    fun setExpression(expressionId: String) {
-        modelSetting?.let { setting ->
-            for (i in 0 until setting.getExpressionCount()) {
-                if (setting.getExpressionName(i) == expressionId) {
-                    val fileName = setting.getExpressionFileName(i)
-                    if (fileName.isNotEmpty()) {
-                        val path = modelHomeDirectory + fileName
-                        val buffer = createBuffer(path)
-                        val motion = loadExpression(buffer)
-                        motion?.let {
-                            expressionManager.startMotionPriority(it, 0)
-                        }
-                    }
-                    break
-                }
-            }
-        }
-    }
-
     private fun createBuffer(path: String): ByteArray {
-        return try {
-            val assetPath = "flutter_assets/$path"
-            println("LAppModel: Loading file: $assetPath")
-            
-            // 列出可用的资源文件
-            context.assets.list("")?.forEach { 
-                println("Available asset root: $it")
-            }
-            context.assets.list("flutter_assets")?.forEach { 
-                println("Available asset in flutter_assets: $it")
-            }
-            
-            // 读取文件
-            context.assets.open(assetPath).use { inputStream ->
-                inputStream.readBytes().also { bytes ->
-                    println("LAppModel: Successfully loaded ${bytes.size} bytes from $assetPath")
-                }
-            }
-        } catch (e: Exception) {
-            println("LAppModel: Failed to load file: $path")
-            e.printStackTrace()
-            ByteArray(0)
-        }
+        println("LAppModel: Creating buffer for path: $path")
+        return context.assets.open(path).use { it.readBytes() }
     }
 
-    override fun getModelMatrix(): CubismModelMatrix {
-        return getModelMatrix()
+    fun release() {
+        println("LAppModel: Releasing resources")
+        model?.delete()
+        model = null
+        modelSetting = null
+        textureManager = LAppTextureManager(context)
+        println("LAppModel: Resources released")
     }
 
-    override fun setDragging(x: Float, y: Float) {
-        model?.let { model ->
-            val dragX = x * 30.0f
-            val dragY = y * 30.0f
-            
-            // Update parameters
-            model.addParameterValue(CubismFramework.getIdManager().getId("ParamAngleX"), dragX)
-            model.addParameterValue(CubismFramework.getIdManager().getId("ParamAngleY"), dragY)
-            model.addParameterValue(CubismFramework.getIdManager().getId("ParamAngleZ"), dragX * dragY * (-30.0f))
-            model.addParameterValue(CubismFramework.getIdManager().getId("ParamBodyAngleX"), dragX * 10.0f)
-            model.addParameterValue(CubismFramework.getIdManager().getId("ParamEyeBallX"), dragX)
-            model.addParameterValue(CubismFramework.getIdManager().getId("ParamEyeBallY"), dragY)
-        }
-    }
-
-    fun hitTest(hitAreaName: String, x: Float, y: Float): Boolean {
-        if (modelSetting == null) return false
-        
-        for (i in 0 until modelSetting!!.getHitAreasCount()) {
-            if (modelSetting!!.getHitAreaName(i) == hitAreaName) {
-                val drawId = modelSetting!!.getHitAreaId(i)
-                return isHit(drawId, x, y)
-            }
-        }
-        return false
-    }
-
-    override fun isHit(drawableId: CubismId, pointX: Float, pointY: Float): Boolean {
-        val drawableIndex = model?.getDrawableIndex(drawableId) ?: -1
-        if (drawableIndex < 0) return false
-
-        // 获取可绘制对象的顶点位置
-        val vertices = model?.getDrawableVertices(drawableIndex)
-        if (vertices == null || vertices.isEmpty()) return false
-
-        // 计算包围盒
-        var minX = Float.MAX_VALUE
-        var minY = Float.MAX_VALUE
-        var maxX = Float.MIN_VALUE
-        var maxY = Float.MIN_VALUE
-
-        for (i in vertices.indices step 2) {
-            val x = vertices[i]
-            val y = vertices[i + 1]
-            minX = minOf(minX, x)
-            minY = minOf(minY, y)
-            maxX = maxOf(maxX, x)
-            maxY = maxOf(maxY, y)
-        }
-
-        // 检查点是否在包围盒内
-        return pointX >= minX && pointX <= maxX && pointY >= minY && pointY <= maxY
-    }
-
-    fun setRandomExpression() {
-        if (modelSetting == null) return
-        
-        val expressionCount = modelSetting!!.getExpressionCount()
-        if (expressionCount > 0) {
-            val expressionIndex = (Math.random() * expressionCount).toInt()
-            setExpression(modelSetting!!.getExpressionName(expressionIndex))
-        }
-    }
-
-    fun startRandomMotion(group: String, priority: Int) {
-        if (modelSetting == null) return
-        
-        val motionCount = modelSetting!!.getMotionCount(group)
-        if (motionCount > 0) {
-            val motionIndex = (Math.random() * motionCount).toInt()
-            startMotion(group, motionIndex, priority)
-        }
-    }
-
-    override fun setOpacity(opacity: Float) {
-        model?.let { model ->
-            // 设置模型的不透明度
-            model.setParameterValue(
-                CubismFramework.getIdManager().getId("ParamOpacity"),
-                opacity
-            )
-            // 强制更新
-            model.update()
-        }
-    }
-
-    fun dispose() {
-        println("LAppModel: Disposing...")
-        try {
-            // 放渲染器
-            (getRenderer() as? CubismRendererAndroid)?.close()
-            
-            // 释放模型资源
-            model?.close()
-            
-            // 清除引用
-            modelSetting = null
-            model = null
-            
-            // 删除着色器程序
-            if (shader?.getShaderId() != 0) {
-                GLES20.glDeleteProgram(shader?.getShaderId()!!)
-            }
-            
-            shader?.dispose()
-            
-            println("LAppModel: Disposed successfully")
-        } catch (e: Exception) {
-            println("LAppModel: Error during disposal")
-            e.printStackTrace()
-        }
-    }
-
-    fun initializeShader() {
-        // 在OpenGL上下文中创建着色器
-        shader = LAppSpriteShader(context)
-        if (shader?.getShaderId() == 0) {
-            throw RuntimeException("Failed to create shader program")
-        }
-    }
+    // 其他必要的方法...
 } 

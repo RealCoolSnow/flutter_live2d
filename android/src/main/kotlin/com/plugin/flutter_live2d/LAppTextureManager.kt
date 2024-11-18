@@ -60,4 +60,20 @@ class LAppTextureManager(private val context: Context) {
 
         throw RuntimeException("Failed to load texture: $filePath")
     }
+
+    fun release() {
+        textures.forEach { textureInfo ->
+            val textureIds = intArrayOf(textureInfo.id)
+            GLES20.glDeleteTextures(1, textureIds, 0)
+        }
+        textures.clear()
+    }
+
+    fun getTextureById(textureId: Int): TextureInfo? {
+        return textures.find { it.id == textureId }
+    }
+
+    fun getTextureByPath(filePath: String): TextureInfo? {
+        return textures.find { it.filePath == filePath }
+    }
 } 
