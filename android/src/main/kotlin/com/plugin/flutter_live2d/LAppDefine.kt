@@ -6,6 +6,30 @@ import com.live2d.sdk.cubism.framework.CubismFrameworkConfig.LogLevel
  * 应用程序中使用的常量定义
  */
 object LAppDefine {
+    /** MOC3一致性验证开关 */
+    const val MOC_CONSISTENCY_VALIDATION_ENABLE = true
+
+    /** 调试日志开关 */
+    const val DEBUG_LOG_ENABLE = true
+
+    /** 触摸信息调试日志开关 */
+    const val DEBUG_TOUCH_LOG_ENABLE = true
+
+    /** Framework日志输出级别设置 */
+    val cubismLoggingLevel = LogLevel.VERBOSE
+
+    /** 预乘alpha开关 */
+    const val PREMULTIPLIED_ALPHA_ENABLE = true
+
+    /** 
+     * 是否绘制到LAppView持有的目标
+     * (如果USE_RENDER_TARGET和USE_MODEL_RENDER_TARGET都为true，此变量优先于USE_MODEL_RENDER_TARGET)
+     */
+    const val USE_RENDER_TARGET = false
+
+    /** 是否绘制到每个LAppModel拥有的目标 */
+    const val USE_MODEL_RENDER_TARGET = false
+
     /**
      * 缩放比例定义
      */
@@ -93,32 +117,6 @@ object LAppDefine {
         IDLE(1),
         NORMAL(2),
         FORCE(3)
-    }
-
-    companion object {
-        /** MOC3一致性验证开关 */
-        const val MOC_CONSISTENCY_VALIDATION_ENABLE = true
-
-        /** 调试日志开关 */
-        const val DEBUG_LOG_ENABLE = true
-
-        /** 触摸信息调试日志开关 */
-        const val DEBUG_TOUCH_LOG_ENABLE = true
-
-        /** Framework日志输出级别设置 */
-        val cubismLoggingLevel = LogLevel.VERBOSE
-
-        /** 预乘alpha开关 */
-        const val PREMULTIPLIED_ALPHA_ENABLE = true
-
-        /** 
-         * 是否绘制到LAppView持有的目标
-         * (如果USE_RENDER_TARGET和USE_MODEL_RENDER_TARGET都为true，此变量优先于USE_MODEL_RENDER_TARGET)
-         */
-        const val USE_RENDER_TARGET = false
-
-        /** 是否绘制到每个LAppModel拥有的目标 */
-        const val USE_MODEL_RENDER_TARGET = false
     }
 
     /**
