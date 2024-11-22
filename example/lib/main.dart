@@ -5,10 +5,19 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_live2d/flutter_live2d.dart';
 
-// 添加常量定义
+// 常量定义
 class Live2DAssets {
   static const String MODEL_PATH = 'assets/live2d/Mao/Mao.model3.json';
   static const String BACKGROUND_IMAGE = 'assets/live2d/back_class_normal.png';
+}
+
+// 动作组定义
+class MotionGroups {
+  static const String IDLE = "Idle";
+  static const String TAP_BODY = "TapBody";
+  static const String PINCH_IN = "PinchIn";
+  static const String PINCH_OUT = "PinchOut";
+  static const String SHAKE = "Shake";
 }
 
 void main() {
@@ -22,6 +31,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Live2DDemo(),
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Colors.blue,
+      ),
     );
   }
 }
@@ -33,217 +46,205 @@ class Live2DDemo extends StatefulWidget {
 
 class _Live2DDemoState extends State<Live2DDemo> {
   bool _isModelLoaded = false;
+  bool _isMotionPlaying = false;
   double _scale = 1.0;
   String _status = "初始化中...";
   String? _backgroundImage;
+  String _renderingTarget = FlutterLive2d.renderTargetNone;
 
   @override
   void initState() {
     super.initState();
-    print("Live2DDemo: initState");
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      print("Live2DDemo: postFrameCallback");
-      _initLive2D();
-    });
+    _initLive2D();
   }
 
   Future<void> _initLive2D() async {
     try {
-      setState(() => _status = "初始化Live2D引擎...");
-      print("Live2DDemo: Starting initialization");
+      _updateStatus("初始化Live2D引擎...");
       await FlutterLive2d.initLive2d();
-      print("Live2DDemo: Live2D initialized");
 
-      setState(() => _status = "等待视图准备...");
-      await Future.delayed(Duration(seconds: 1));
-      print("Live2DDemo: Delay completed");
-
-      setState(() => _status = "设置背景...");
+      _updateStatus("设置背景...");
       await FlutterLive2d.setBackgroundImage(Live2DAssets.BACKGROUND_IMAGE);
       setState(() => _backgroundImage = Live2DAssets.BACKGROUND_IMAGE);
 
-      setState(() => _status = "加载模型...");
+      _updateStatus("加载模型...");
       await FlutterLive2d.loadModel(Live2DAssets.MODEL_PATH);
-      print("Live2DDemo: Model loaded");
+
+      // 等待模型加载完成
+      while (!await FlutterLive2d.isModelLoaded()) {
+        await Future.delayed(Duration(milliseconds: 100));
+      }
 
       setState(() {
         _isModelLoaded = true;
         _status = "加载完成";
       });
+
+      // 开始播放待机动作
+      _startIdleMotion();
     } catch (e, stackTrace) {
-      print("Live2DDemo: Initialization failed");
-      print("Live2DDemo: Error: $e");
-      print("Live2DDemo: Stack trace: $stackTrace");
-      setState(() => _status = "加载失败: $e");
+      print("Live2D初始化失败: $e\n$stackTrace");
+      _updateStatus("加载失败: $e");
     }
   }
 
-  void _handleScale(double scale) async {
+  void _updateStatus(String status) {
+    if (mounted) {
+      setState(() => _status = status);
+    }
+    print("Live2D状态: $status");
+  }
+
+  Future<void> _startIdleMotion() async {
+    while (mounted) {
+      if (!_isMotionPlaying) {
+        await FlutterLive2d.startRandomMotion(
+          MotionGroups.IDLE,
+          priority: 1,
+        );
+      }
+      await Future.delayed(Duration(seconds: 2));
+    }
+  }
+
+  Future<void> _handleScale(double scale) async {
     setState(() => _scale = scale);
     await FlutterLive2d.setScale(scale);
   }
 
-  void _handleMotion(String group, int index) async {
+  Future<void> _handleMotion(String group, int index) async {
     try {
-      await FlutterLive2d.startMotion(group, index);
+      setState(() => _isMotionPlaying = true);
+      await FlutterLive2d.startMotion(group, index, priority: 2);
+      while (!await FlutterLive2d.isMotionFinished()) {
+        await Future.delayed(Duration(milliseconds: 100));
+      }
+      setState(() => _isMotionPlaying = false);
     } catch (e) {
-      print("Motion error: $e");
+      print("动作执行错误: $e");
+      setState(() => _isMotionPlaying = false);
     }
   }
 
-  void _handleExpression(String expression) async {
+  Future<void> _handleRandomMotion(String group) async {
     try {
-      await FlutterLive2d.setExpression(expression);
+      setState(() => _isMotionPlaying = true);
+      await FlutterLive2d.startRandomMotion(group, priority: 2);
+      while (!await FlutterLive2d.isMotionFinished()) {
+        await Future.delayed(Duration(milliseconds: 100));
+      }
+      setState(() => _isMotionPlaying = false);
     } catch (e) {
-      print("Expression error: $e");
+      print("随机动作执行错误: $e");
+      setState(() => _isMotionPlaying = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print("Live2DDemo: Building widget");
     return Scaffold(
       appBar: AppBar(
         title: Text('Live2D Demo'),
         actions: [
-          if (_isModelLoaded)
-            PopupMenuButton<String>(
-              onSelected: (value) async {
-                if (value == 'reset') {
-                  await FlutterLive2d.resetModel();
-                } else if (value == 'background') {
-                  final newBackground = _backgroundImage == null
-                      ? Live2DAssets.BACKGROUND_IMAGE
-                      : null;
-                  if (newBackground != null) {
-                    await FlutterLive2d.setBackgroundImage(newBackground);
-                  }
-                  setState(() => _backgroundImage = newBackground);
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'reset',
-                  child: Text('重置模型'),
-                ),
-                PopupMenuItem(
-                  value: 'background',
-                  child: Text(_backgroundImage == null ? '显示背景' : '隐藏背景'),
-                ),
-              ],
-            ),
+          if (_isModelLoaded) _buildMenuButton(),
         ],
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // Live2D视图
-            Expanded(
-              child: Container(
-                color: Colors.blue[50],
-                child: Stack(
-                  children: [
-                    AndroidView(
-                      viewType: 'live2d_view',
-                      creationParams: <String, dynamic>{},
-                      creationParamsCodec: const StandardMessageCodec(),
-                      onPlatformViewCreated: (int id) {
-                        print("Live2DDemo: Platform view created with id: $id");
-                      },
-                      hitTestBehavior: PlatformViewHitTestBehavior.opaque,
-                      layoutDirection: TextDirection.ltr,
-                      gestureRecognizers: <Factory<
-                          OneSequenceGestureRecognizer>>{
-                        Factory<OneSequenceGestureRecognizer>(
-                          () => EagerGestureRecognizer(),
-                        ),
-                      },
-                    ),
-                    if (!_isModelLoaded)
-                      Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 16),
-                            Text(_status),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+            _buildLive2DView(),
+            if (_isModelLoaded) _buildControlPanel(),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // 底部控制面板
-            if (_isModelLoaded)
-              Material(
-                elevation: 8,
-                child: Container(
-                  color: Colors.grey[50],
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).padding.bottom + 8,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 缩放滑块
-                      SizedBox(
-                        height: 40,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              Icon(Icons.zoom_in, size: 18),
-                              Expanded(
-                                child: Slider(
-                                  value: _scale,
-                                  min: 0.5,
-                                  max: 2.0,
-                                  onChanged: _handleScale,
-                                ),
-                              ),
-                              Text('${_scale.toStringAsFixed(1)}x',
-                                  style: TextStyle(fontSize: 13)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // 动作和表情按钮
-                      SizedBox(
-                        height: 64,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              _buildButtonGroup('动作', [
-                                _buildButton(
-                                    '待机', () => _handleMotion("Idle", 0)),
-                                _buildButton(
-                                    '摇头', () => _handleMotion("TapBody", 0)),
-                                _buildButton(
-                                    '随机',
-                                    () => FlutterLive2d.startRandomMotion(
-                                        "TapBody")),
-                              ]),
-                              SizedBox(width: 20),
-                              _buildButtonGroup('表情', [
-                                _buildButton(
-                                    '微笑', () => _handleExpression("smile")),
-                                _buildButton(
-                                    '生气', () => _handleExpression("angry")),
-                                _buildButton(
-                                    '难过', () => _handleExpression("sad")),
-                              ]),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+  Widget _buildMenuButton() {
+    return PopupMenuButton<String>(
+      onSelected: (value) async {
+        switch (value) {
+          case 'reset':
+            await FlutterLive2d.resetModel();
+            setState(() => _scale = 1.0);
+            break;
+          case 'background':
+            final newBackground =
+                _backgroundImage == null ? Live2DAssets.BACKGROUND_IMAGE : null;
+            if (newBackground != null) {
+              await FlutterLive2d.setBackgroundImage(newBackground);
+            }
+            setState(() => _backgroundImage = newBackground);
+            break;
+          case 'render_none':
+            await FlutterLive2d.setRenderingTarget(
+                FlutterLive2d.renderTargetNone);
+            setState(() => _renderingTarget = FlutterLive2d.renderTargetNone);
+            break;
+          case 'render_model':
+            await FlutterLive2d.setRenderingTarget(
+                FlutterLive2d.renderTargetModelBuffer);
+            setState(
+                () => _renderingTarget = FlutterLive2d.renderTargetModelBuffer);
+            break;
+          case 'render_view':
+            await FlutterLive2d.setRenderingTarget(
+                FlutterLive2d.renderTargetViewBuffer);
+            setState(
+                () => _renderingTarget = FlutterLive2d.renderTargetViewBuffer);
+            break;
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(value: 'reset', child: Text('重置模型')),
+        PopupMenuItem(
+          value: 'background',
+          child: Text(_backgroundImage == null ? '显示背景' : '隐藏背景'),
+        ),
+        PopupMenuItem(
+          value: 'render_none',
+          child: Text('默认渲染'),
+          enabled: _renderingTarget != FlutterLive2d.renderTargetNone,
+        ),
+        PopupMenuItem(
+          value: 'render_model',
+          child: Text('模型缓冲渲染'),
+          enabled: _renderingTarget != FlutterLive2d.renderTargetModelBuffer,
+        ),
+        PopupMenuItem(
+          value: 'render_view',
+          child: Text('视图缓冲渲染'),
+          enabled: _renderingTarget != FlutterLive2d.renderTargetViewBuffer,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLive2DView() {
+    return Expanded(
+      child: Container(
+        color: Colors.grey[100],
+        child: Stack(
+          children: [
+            AndroidView(
+              viewType: 'live2d_view',
+              creationParamsCodec: const StandardMessageCodec(),
+              hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+              gestureRecognizers: {
+                Factory<OneSequenceGestureRecognizer>(
+                  () => EagerGestureRecognizer(),
+                ),
+              },
+            ),
+            if (!_isModelLoaded)
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text(_status),
+                  ],
                 ),
               ),
           ],
@@ -252,11 +253,89 @@ class _Live2DDemoState extends State<Live2DDemo> {
     );
   }
 
-  Widget _buildButton(String text, VoidCallback onPressed) {
+  Widget _buildControlPanel() {
+    return Material(
+      elevation: 8,
+      child: Container(
+        color: Colors.grey[50],
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).padding.bottom + 8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildScaleSlider(),
+            _buildMotionControls(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScaleSlider() {
+    return SizedBox(
+      height: 40,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Icon(Icons.zoom_in, size: 18),
+            Expanded(
+              child: Slider(
+                value: _scale,
+                min: 0.5,
+                max: 2.0,
+                onChanged: _isMotionPlaying ? null : _handleScale,
+              ),
+            ),
+            Text(
+              '${_scale.toStringAsFixed(1)}x',
+              style: TextStyle(fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMotionControls() {
+    return SizedBox(
+      height: 64,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _buildButtonGroup('基础动作', [
+              _buildMotionButton(
+                  '待机', () => _handleMotion(MotionGroups.IDLE, 0)),
+              _buildMotionButton(
+                  '摇头', () => _handleMotion(MotionGroups.TAP_BODY, 0)),
+              _buildMotionButton(
+                  '随机', () => _handleRandomMotion(MotionGroups.TAP_BODY)),
+            ]),
+            SizedBox(width: 20),
+            _buildButtonGroup('特殊动作', [
+              _buildMotionButton(
+                  '缩小', () => _handleMotion(MotionGroups.PINCH_IN, 0)),
+              _buildMotionButton(
+                  '放大', () => _handleMotion(MotionGroups.PINCH_OUT, 0)),
+              _buildMotionButton(
+                  '摇晃', () => _handleMotion(MotionGroups.SHAKE, 0)),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMotionButton(String text, VoidCallback onPressed) {
     return SizedBox(
       height: 36,
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: _isMotionPlaying ? null : onPressed,
         style: ElevatedButton.styleFrom(
           padding: EdgeInsets.symmetric(horizontal: 16),
           textStyle: TextStyle(fontSize: 14),
@@ -293,5 +372,10 @@ class _Live2DDemoState extends State<Live2DDemo> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
