@@ -12,7 +12,9 @@ class LAppViewFactory(
 ) : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
     
     override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
-        println("LAppViewFactory: Creating view with id: $viewId")
+        if (LAppDefine.DEBUG_LOG_ENABLE) {
+            LAppPal.printLog("Creating Live2D view with id: $viewId")
+        }
         return Live2DPlatformView(context, viewId)
     }
 }
@@ -21,16 +23,26 @@ class Live2DPlatformView(
     private val context: Context,
     private val viewId: Int
 ) : PlatformView {
-    private val view: LAppView = LAppView(context)
+    private val view: LAppView
 
     init {
-        println("Live2DPlatformView: Initializing view $viewId")
+        if (LAppDefine.DEBUG_LOG_ENABLE) {
+            LAppPal.printLog("Initializing Live2D view $viewId")
+        }
+        
+        // 创建并初始化视图
+        view = LAppView(context).apply {
+            initialize()
+            initializeSprite()
+        }
     }
 
     override fun getView(): View = view
 
     override fun dispose() {
-        println("Live2DPlatformView: Disposing view $viewId")
-        view.dispose()
+        if (LAppDefine.DEBUG_LOG_ENABLE) {
+            LAppPal.printLog("Disposing Live2D view $viewId")
+        }
+        view.close() // 使用新的 AutoCloseable 接口
     }
 }

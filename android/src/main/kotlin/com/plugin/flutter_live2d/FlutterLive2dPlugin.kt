@@ -9,7 +9,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
 class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
-    private lateinit var channel : MethodChannel
+    private lateinit var channel: MethodChannel
     private lateinit var context: Context
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -21,67 +21,72 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
             "live2d_view",
             LAppViewFactory(flutterPluginBinding.binaryMessenger)
         )
+
+        if (LAppDefine.DEBUG_LOG_ENABLE) {
+            LAppPal.printLog("Flutter Live2D Plugin attached")
+        }
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-        when (call.method) {
-            "initLive2d" -> {
-                LAppDelegate.getInstance().onStart(context)
-                result.success(null)
-            }
-            "loadModel" -> {
-                val modelPath = call.argument<String>("modelPath")
-                if (modelPath != null) {
-                    try {
-                        LAppDelegate.getInstance().loadModel(modelPath)
-                        result.success(null)
-                    } catch (e: Exception) {
-                        result.error("LOAD_ERROR", "Failed to load model", e.message)
+        try {
+            when (call.method) {
+                "initLive2d" -> {
+                    LAppDelegate.getInstance().apply {
+                        onStart(context)
                     }
-                } else {
-                    result.error("INVALID_PATH", "Model path is null", null)
+                    result.success(null)
                 }
-            }
-            "setScale" -> {
-                val scale = call.argument<Double>("scale")?.toFloat() ?: 1.0f
-                LAppDelegate.getInstance().setScale(scale)
-                result.success(null)
-            }
-            "setPosition" -> {
-                val x = call.argument<Double>("x")?.toFloat() ?: 0.0f
-                val y = call.argument<Double>("y")?.toFloat() ?: 0.0f
-                LAppDelegate.getInstance().setPosition(x, y)
-                result.success(null)
-            }
-            "startMotion" -> {
-                val group = call.argument<String>("group") ?: return
-                val index = call.argument<Int>("index") ?: return
-                LAppDelegate.getInstance().startMotion(group, index)
-                result.success(null)
-            }
-            "setExpression" -> {
-                val expression = call.argument<String>("expression") ?: return
-                LAppDelegate.getInstance().setExpression(expression)
-                result.success(null)
-            }
-            "setBackgroundImage" -> {
-                val imagePath = call.argument<String>("imagePath")
-                if (imagePath != null) {
-                    try {
-                        LAppDelegate.getInstance().setBackgroundImage(imagePath)
-                        result.success(null)
-                    } catch (e: Exception) {
-                        result.error("SET_BG_ERROR", "Failed to set background image", e.message)
-                    }
-                } else {
-                    result.error("INVALID_PATH", "Image path is null", null)
+                "loadModel" -> {
+                    val modelPath = call.argument<String>("modelPath")
+                        ?: throw IllegalArgumentException("Model path is null")
+                    
+                    LAppLive2DManager.getInstance().loadModel(modelPath)
+                    result.success(null)
                 }
+                "setScale" -> {
+                    val scale = call.argument<Double>("scale")?.toFloat() ?: 1.0f
+                    LAppLive2DManager.getInstance().getModel(0)?.setScale(scale)
+                    result.success(null)
+                }
+                "setPosition" -> {
+                    val x = call.argument<Double>("x")?.toFloat() ?: 0.0f
+                    val y = call.argument<Double>("y")?.toFloat() ?: 0.0f
+                    LAppLive2DManager.getInstance().getModel(0)?.setPosition(x, y)
+                    result.success(null)
+                }
+                "startMotion" -> {
+                    val group = call.argument<String>("group") 
+                        ?: throw IllegalArgumentException("Motion group is null")
+                    val index = call.argument<Int>("index") 
+                        ?: throw IllegalArgumentException("Motion index is null")
+                    
+                    LAppLive2DManager.getInstance().getModel(0)?.startMotion(
+                        group, index, LAppDefine.Priority.NORMAL.priority
+                    )
+                    result.success(null)
+                }
+                "setExpression" -> {
+                    val expression = call.argument<String>("expression")
+                        ?: throw IllegalArgumentException("Expression is null")
+                    
+                    LAppLive2DManager.getInstance().getModel(0)?.setExpression(expression)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
             }
-            else -> result.notImplemented()
+        } catch (e: Exception) {
+            if (LAppDefine.DEBUG_LOG_ENABLE) {
+                LAppPal.printLog("Error in method call ${call.method}: ${e.message}")
+            }
+            result.error("LIVE2D_ERROR", e.message, null)
         }
     }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        if (LAppDefine.DEBUG_LOG_ENABLE) {
+            LAppPal.printLog("Flutter Live2D Plugin detached")
+        }
         channel.setMethodCallHandler(null)
+        LAppDelegate.getInstance().onDestroy()
     }
 }
