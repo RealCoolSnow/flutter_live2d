@@ -7,6 +7,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import com.plugin.flutter_live2d.LAppDefine
 
 class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var channel: MethodChannel
@@ -59,9 +60,20 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
                         ?: throw IllegalArgumentException("Motion group is null")
                     val index = call.argument<Int>("index") 
                         ?: throw IllegalArgumentException("Motion index is null")
+                    val priority = call.argument<Int>("priority") ?: LAppDefine.Priority.NORMAL.priority
                     
                     LAppLive2DManager.getInstance().getModel(0)?.startMotion(
-                        group, index, LAppDefine.Priority.NORMAL.priority
+                        group, index, priority
+                    )
+                    result.success(null)
+                }
+                "startRandomMotion" -> {
+                    val group = call.argument<String>("group")
+                        ?: throw IllegalArgumentException("Motion group is null")
+                    val priority = call.argument<Int>("priority") ?: LAppDefine.Priority.NORMAL.priority
+                    
+                    LAppLive2DManager.getInstance().getModel(0)?.startRandomMotion(
+                        group, priority
                     )
                     result.success(null)
                 }
@@ -70,6 +82,26 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
                         ?: throw IllegalArgumentException("Expression is null")
                     
                     LAppLive2DManager.getInstance().getModel(0)?.setExpression(expression)
+                    result.success(null)
+                }
+                "setRandomExpression" -> {
+                    LAppLive2DManager.getInstance().getModel(0)?.setRandomExpression()
+                    result.success(null)
+                }
+                "isMotionFinished" -> {
+                    val isFinished = LAppLive2DManager.getInstance().getModel(0)?.isMotionFinished() ?: true
+                    result.success(isFinished)
+                }
+                "isModelLoaded" -> {
+                    val isLoaded = LAppLive2DManager.getInstance().getModel(0) != null
+                    result.success(isLoaded)
+                }
+                "setRenderingTarget" -> {
+                    val target = call.argument<String>("target")
+                        ?: throw IllegalArgumentException("Rendering target is null")
+                    LAppDelegate.getInstance().getView()?.switchRenderingTarget(
+                        LAppView.RenderingTarget.valueOf(target)
+                    )
                     result.success(null)
                 }
                 else -> result.notImplemented()
