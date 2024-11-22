@@ -1,6 +1,7 @@
 import 'flutter_live2d_platform_interface.dart';
 
 class FlutterLive2d {
+  // 基础功能
   static Future<void> initLive2d() {
     return FlutterLive2dPlatform.instance.initLive2d();
   }
@@ -9,6 +10,7 @@ class FlutterLive2d {
     return FlutterLive2dPlatform.instance.loadModel(modelPath);
   }
 
+  // 模型变换
   static Future<void> setScale(double scale) {
     return FlutterLive2dPlatform.instance.setScale(scale);
   }
@@ -17,38 +19,55 @@ class FlutterLive2d {
     return FlutterLive2dPlatform.instance.setPosition(x, y);
   }
 
-  static Future<void> startMotion(String group, int index) {
-    return FlutterLive2dPlatform.instance.startMotion(group, index);
+  static Future<void> setOpacity(double opacity) {
+    return FlutterLive2dPlatform.instance.setOpacity(opacity);
+  }
+
+  // 动作和表情
+  static Future<void> startMotion(String group, int index, {int? priority}) {
+    return FlutterLive2dPlatform.instance
+        .startMotion(group, index, priority: priority);
+  }
+
+  static Future<void> startRandomMotion(String group, {int priority = 2}) {
+    return FlutterLive2dPlatform.instance
+        .startRandomMotion(group, priority: priority);
   }
 
   static Future<void> setExpression(String expression) {
     return FlutterLive2dPlatform.instance.setExpression(expression);
   }
 
-  /// 设置背景图
+  static Future<void> setRandomExpression() {
+    return FlutterLive2dPlatform.instance.setRandomExpression();
+  }
+
+  // 状态查询
+  static Future<bool> isModelLoaded() {
+    return FlutterLive2dPlatform.instance.isModelLoaded();
+  }
+
+  static Future<bool> isMotionFinished() {
+    return FlutterLive2dPlatform.instance.isMotionFinished();
+  }
+
+  // 视图控制
   static Future<void> setBackgroundImage(String imagePath) {
     return FlutterLive2dPlatform.instance.setBackgroundImage(imagePath);
   }
 
-  /// 重置模型位置和缩放
+  static Future<void> setRenderingTarget(String target) {
+    return FlutterLive2dPlatform.instance.setRenderingTarget(target);
+  }
+
+  // 便捷方法
   static Future<void> resetModel() async {
     await setScale(1.0);
     await setPosition(0.0, 0.0);
   }
 
-  /// 播放随机动作
-  static Future<void> startRandomMotion(String group) async {
-    // 默认使用索引0
-    await startMotion(group, 0);
-  }
-
-  /// 设置模型透明度
-  static Future<void> setOpacity(double opacity) {
-    return FlutterLive2dPlatform.instance.setOpacity(opacity);
-  }
-
-  /// 获取模型是否加载完成
-  static Future<bool> isModelLoaded() {
-    return FlutterLive2dPlatform.instance.isModelLoaded();
-  }
+  // 渲染目标常量
+  static const String renderTargetNone = 'NONE';
+  static const String renderTargetModelBuffer = 'MODEL_FRAME_BUFFER';
+  static const String renderTargetViewBuffer = 'VIEW_FRAME_BUFFER';
 }

@@ -39,23 +39,39 @@ abstract class FlutterLive2dPlatform extends PlatformInterface {
     throw UnimplementedError('setPosition() has not been implemented.');
   }
 
-  Future<void> startMotion(String group, int index) {
+  Future<void> setOpacity(double opacity) {
+    throw UnimplementedError('setOpacity() has not been implemented.');
+  }
+
+  Future<void> startMotion(String group, int index, {int? priority}) {
     throw UnimplementedError('startMotion() has not been implemented.');
+  }
+
+  Future<void> startRandomMotion(String group, {int priority = 2}) {
+    throw UnimplementedError('startRandomMotion() has not been implemented.');
   }
 
   Future<void> setExpression(String expression) {
     throw UnimplementedError('setExpression() has not been implemented.');
   }
 
-  Future<void> setOpacity(double opacity) {
-    throw UnimplementedError('setOpacity() has not been implemented.');
+  Future<void> setRandomExpression() {
+    throw UnimplementedError('setRandomExpression() has not been implemented.');
   }
 
   Future<bool> isModelLoaded() {
     throw UnimplementedError('isModelLoaded() has not been implemented.');
   }
 
+  Future<bool> isMotionFinished() {
+    throw UnimplementedError('isMotionFinished() has not been implemented.');
+  }
+
   Future<void> setBackgroundImage(String imagePath) {
     throw UnimplementedError('setBackgroundImage() has not been implemented.');
+  }
+
+  Future<void> setRenderingTarget(String target) {
+    throw UnimplementedError('setRenderingTarget() has not been implemented.');
   }
 }

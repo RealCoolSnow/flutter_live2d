@@ -30,10 +30,24 @@ class MethodChannelFlutterLive2d extends FlutterLive2dPlatform {
   }
 
   @override
-  Future<void> startMotion(String group, int index) async {
+  Future<void> setOpacity(double opacity) async {
+    await methodChannel.invokeMethod('setOpacity', {'opacity': opacity});
+  }
+
+  @override
+  Future<void> startMotion(String group, int index, {int? priority}) async {
     await methodChannel.invokeMethod('startMotion', {
       'group': group,
       'index': index,
+      'priority': priority ?? 2,
+    });
+  }
+
+  @override
+  Future<void> startRandomMotion(String group, {int priority = 2}) async {
+    await methodChannel.invokeMethod('startRandomMotion', {
+      'group': group,
+      'priority': priority,
     });
   }
 
@@ -44,19 +58,30 @@ class MethodChannelFlutterLive2d extends FlutterLive2dPlatform {
   }
 
   @override
-  Future<void> setOpacity(double opacity) async {
-    await methodChannel.invokeMethod('setOpacity', {'opacity': opacity});
+  Future<void> setRandomExpression() async {
+    await methodChannel.invokeMethod('setRandomExpression');
   }
 
   @override
   Future<bool> isModelLoaded() async {
-    final bool? result = await methodChannel.invokeMethod('isModelLoaded');
+    final result = await methodChannel.invokeMethod<bool>('isModelLoaded');
     return result ?? false;
+  }
+
+  @override
+  Future<bool> isMotionFinished() async {
+    final result = await methodChannel.invokeMethod<bool>('isMotionFinished');
+    return result ?? true;
   }
 
   @override
   Future<void> setBackgroundImage(String imagePath) async {
     await methodChannel
         .invokeMethod('setBackgroundImage', {'imagePath': imagePath});
+  }
+
+  @override
+  Future<void> setRenderingTarget(String target) async {
+    await methodChannel.invokeMethod('setRenderingTarget', {'target': target});
   }
 }
