@@ -1,5 +1,28 @@
 import 'flutter_live2d_platform_interface.dart';
 
+// 动作组常量
+class MotionGroup {
+  static const String IDLE = "Idle";
+  static const String TAP_BODY = "TapBody";
+  static const String PINCH_IN = "PinchIn";
+  static const String PINCH_OUT = "PinchOut";
+  static const String SHAKE = "Shake";
+}
+
+// 优先级常量
+class Priority {
+  static const int NONE = 0;
+  static const int IDLE = 1;
+  static const int NORMAL = 2;
+  static const int FORCE = 3;
+}
+
+// 点击区域常量
+class HitArea {
+  static const String HEAD = "Head";
+  static const String BODY = "Body";
+}
+
 class FlutterLive2d {
   // 基础功能
   static Future<void> initLive2d() {

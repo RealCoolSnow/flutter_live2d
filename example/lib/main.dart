@@ -21,6 +21,8 @@ class MotionGroups {
 }
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   runApp(const MyApp());
 }
 
@@ -115,7 +117,7 @@ class _Live2DDemoState extends State<Live2DDemo> {
   Future<void> _handleMotion(String group, int index) async {
     try {
       setState(() => _isMotionPlaying = true);
-      await FlutterLive2d.startMotion(group, index, priority: 2);
+      await FlutterLive2d.startMotion(group, index, priority: Priority.NORMAL);
       while (!await FlutterLive2d.isMotionFinished()) {
         await Future.delayed(Duration(milliseconds: 100));
       }
