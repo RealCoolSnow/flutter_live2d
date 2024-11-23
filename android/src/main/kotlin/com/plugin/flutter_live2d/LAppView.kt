@@ -107,23 +107,23 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
 
         // 加载背景图像
         try {
-            val backgroundTexture = textureManager.createTextureFromPngFile(
-                LAppDefine.ResourcePath.BACK_IMAGE.path
-            )
+            // val backgroundTexture = textureManager.createTextureFromPngFile(
+            //     LAppDefine.ResourcePath.BACK_IMAGE.path
+            // )
 
-            // x,y是图像的中心坐标
-            var x = windowWidth * 0.5f
-            var y = windowHeight * 0.5f
-            var fWidth = backgroundTexture.width * 2.0f
-            var fHeight = windowHeight * 0.95f
+            // // x,y是图像的中心坐标
+            // var x = windowWidth * 0.5f
+            // var y = windowHeight * 0.5f
+            // var fWidth = backgroundTexture.width * 2.0f
+            // var fHeight = windowHeight * 0.95f
 
-            val programId = spriteShader.getShaderId()
+            // val programId = spriteShader.getShaderId()
 
-            if (backSprite == null) {
-                backSprite = LAppSprite(x, y, fWidth, fHeight, backgroundTexture.id, programId)
-            } else {
-                backSprite?.resize(x, y, fWidth, fHeight)
-            }
+            // if (backSprite == null) {
+            //     backSprite = LAppSprite(x, y, fWidth, fHeight, backgroundTexture.id, programId)
+            // } else {
+            //     backSprite?.resize(x, y, fWidth, fHeight)
+            // }
 
             // 加载齿轮图像
             // val gearTexture = textureManager.createTextureFromPngFile(
@@ -393,4 +393,52 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
      * 获取当前渲染目标
      */
     fun getRenderingTarget(): RenderingTarget = renderingTarget
+
+    /**
+     * 设置背景图片
+     */
+    fun setBackgroundImage(imagePath: String) {
+        val textureManager = LAppDelegate.getInstance().getTextureManager()
+            ?: run {
+                if (LAppDefine.DEBUG_LOG_ENABLE) {
+                    LAppPal.printLog("TextureManager is null")
+                }
+                return
+            }
+
+        try {
+            val backgroundTexture = textureManager.createTextureFromPngFile(imagePath)
+            
+            val windowWidth = LAppDelegate.getInstance().getWindowWidth()
+            val windowHeight = LAppDelegate.getInstance().getWindowHeight()
+            
+            // x,y是图像的中心坐标
+            val x = windowWidth * 0.5f
+            val y = windowHeight * 0.5f
+            val fWidth = backgroundTexture.width * 2.0f
+            val fHeight = windowHeight * 0.95f
+
+            val programId = spriteShader.getShaderId()
+
+            if (backSprite == null) {
+                backSprite = LAppSprite(x, y, fWidth, fHeight, backgroundTexture.id, programId)
+            } else {
+                // 更新现有精灵的纹理ID和尺寸
+                backSprite?.apply {
+                    // 假设LAppSprite有更新纹理ID的方法，如果没有需要添加
+                    updateTextureId(backgroundTexture.id)
+                    resize(x, y, fWidth, fHeight)
+                }
+            }
+
+            if (LAppDefine.DEBUG_LOG_ENABLE) {
+                LAppPal.printLog("Background image set successfully: $imagePath")
+            }
+        } catch (e: Exception) {
+            if (LAppDefine.DEBUG_LOG_ENABLE) {
+                LAppPal.printLog("Failed to set background image: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
 } 

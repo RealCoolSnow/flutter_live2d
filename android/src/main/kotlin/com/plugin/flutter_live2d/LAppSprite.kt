@@ -13,7 +13,7 @@ class LAppSprite(
     y: Float,
     width: Float,
     height: Float,
-    private val textureId: Int,
+    private var textureId: Int,
     programId: Int
 ) {
     private val rect = Rect()
@@ -197,6 +197,13 @@ class LAppSprite(
     fun setWindowSize(width: Int, height: Int) {
         maxWidth = width
         maxHeight = height
+    }
+
+    /**
+     * 更新纹理ID
+     */
+    fun updateTextureId(newTextureId: Int) {
+        textureId = newTextureId
     }
 
     /**

@@ -104,6 +104,13 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
                     )
                     result.success(null)
                 }
+                "setBackgroundImage" -> {
+                    val imagePath = call.argument<String>("imagePath")
+                        ?: throw IllegalArgumentException("Image path is null")
+                    
+                    LAppDelegate.getInstance().getView()?.setBackgroundImage(imagePath)
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         } catch (e: Exception) {
