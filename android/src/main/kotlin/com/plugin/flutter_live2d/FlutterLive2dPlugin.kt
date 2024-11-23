@@ -7,7 +7,6 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import com.plugin.flutter_live2d.LAppDefine
 
 class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
     private lateinit var channel: MethodChannel
@@ -18,14 +17,11 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_live2d")
         channel.setMethodCallHandler(this)
 
+        // 注册PlatformView工厂
         flutterPluginBinding.platformViewRegistry.registerViewFactory(
             "live2d_view",
             LAppViewFactory(flutterPluginBinding.binaryMessenger)
         )
-
-        if (LAppDefine.DEBUG_LOG_ENABLE) {
-            LAppPal.printLog("Flutter Live2D Plugin attached")
-        }
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
@@ -125,6 +121,8 @@ class FlutterLive2dPlugin: FlutterPlugin, MethodCallHandler {
         if (LAppDefine.DEBUG_LOG_ENABLE) {
             LAppPal.printLog("Flutter Live2D Plugin detached")
         }
+        
+        // 清理资源
         channel.setMethodCallHandler(null)
         LAppDelegate.getInstance().onDestroy()
     }

@@ -50,7 +50,6 @@ class LAppDelegate private constructor() {
     }
 
     fun onStart(context: Context) {
-        println("LAppDelegate: Starting with context")
         this.context = context
         textureManager = LAppTextureManager(context)
         view = LAppView(context)
