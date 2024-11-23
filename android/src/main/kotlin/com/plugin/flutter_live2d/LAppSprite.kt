@@ -215,4 +215,10 @@ class LAppSprite(
         var up: Float = 0f,     // 上边界
         var down: Float = 0f    // 下边界
     )
+
+    fun getX(): Float = (rect.left + rect.right) * 0.5f
+    fun getY(): Float = (rect.up + rect.down) * 0.5f
+    fun getWidth(): Float = rect.right - rect.left
+    fun getHeight(): Float = rect.up - rect.down
+    fun getTextureId(): Int = textureId
 }

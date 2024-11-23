@@ -184,9 +184,22 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
 
         backSprite?.setWindowSize(maxWidth, maxHeight)
 
+        // Debug logging for backSprite
+        // if (LAppDefine.DEBUG_LOG_ENABLE) {
+        //     backSprite?.let { sprite ->
+        //         LAppPal.printLog("""
+        //             BackSprite Render Info:
+        //             - Position: (${sprite.getX()}, ${sprite.getY()})
+        //             - Size: ${sprite.getWidth()} x ${sprite.getHeight()}
+        //             - TextureId: ${sprite.getTextureId()}
+        //             - Window Size: $maxWidth x $maxHeight
+        //         """.trimIndent())
+        //     } ?: LAppPal.printLog("BackSprite is null")
+        // }
+
         // 渲染UI和背景
         backSprite?.render()
-
+        
         // 渲染模型
         val live2dManager = LAppLive2DManager.getInstance()
         live2dManager.onUpdate()
