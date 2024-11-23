@@ -64,7 +64,7 @@ class TouchManager {
         val centerY = (deviceY1 + deviceY2) * 0.5f
 
         if (lastTouchDistance > 0.0f) {
-            scale = Math.pow(distance / lastTouchDistance, 0.75).toFloat()
+            scale = Math.pow((distance / lastTouchDistance).toDouble(), 0.75).toFloat()
             deltaX = calculateMovingAmount(deviceX1 - lastX1, deviceX2 - lastX2)
             deltaY = calculateMovingAmount(deviceY1 - lastY1, deviceY2 - lastY2)
         } else {

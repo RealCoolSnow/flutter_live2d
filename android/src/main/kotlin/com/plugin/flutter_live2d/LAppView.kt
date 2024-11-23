@@ -98,66 +98,79 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
         val windowWidth = LAppDelegate.getInstance().getWindowWidth()
         val windowHeight = LAppDelegate.getInstance().getWindowHeight()
         val textureManager = LAppDelegate.getInstance().getTextureManager()
+            ?: run {
+                if (LAppDefine.DEBUG_LOG_ENABLE) {
+                    LAppPal.printLog("TextureManager is null")
+                }
+                return
+            }
 
         // 加载背景图像
-        val backgroundTexture = textureManager.createTextureFromPngFile(
-            LAppDefine.ResourcePath.ROOT.path + LAppDefine.ResourcePath.BACK_IMAGE.path
-        )
+        try {
+            val backgroundTexture = textureManager.createTextureFromPngFile(
+                LAppDefine.ResourcePath.ROOT.path + LAppDefine.ResourcePath.BACK_IMAGE.path
+            )
 
-        // x,y是图像的中心坐标
-        var x = windowWidth * 0.5f
-        var y = windowHeight * 0.5f
-        var fWidth = backgroundTexture.width * 2.0f
-        var fHeight = windowHeight * 0.95f
+            // x,y是图像的中心坐标
+            var x = windowWidth * 0.5f
+            var y = windowHeight * 0.5f
+            var fWidth = backgroundTexture.width * 2.0f
+            var fHeight = windowHeight * 0.95f
 
-        val programId = spriteShader.getShaderId()
+            val programId = spriteShader.getShaderId()
 
-        if (backSprite == null) {
-            backSprite = LAppSprite(x, y, fWidth, fHeight, backgroundTexture.id, programId)
-        } else {
-            backSprite?.resize(x, y, fWidth, fHeight)
-        }
+            if (backSprite == null) {
+                backSprite = LAppSprite(x, y, fWidth, fHeight, backgroundTexture.id, programId)
+            } else {
+                backSprite?.resize(x, y, fWidth, fHeight)
+            }
 
-        // 加载齿轮图像
-        val gearTexture = textureManager.createTextureFromPngFile(
-            LAppDefine.ResourcePath.ROOT.path + LAppDefine.ResourcePath.GEAR_IMAGE.path
-        )
+            // 加载齿轮图像
+            val gearTexture = textureManager.createTextureFromPngFile(
+                LAppDefine.ResourcePath.ROOT.path + LAppDefine.ResourcePath.GEAR_IMAGE.path
+            )
 
-        x = windowWidth - gearTexture.width * 0.5f - 96f
-        y = windowHeight - gearTexture.height * 0.5f
-        fWidth = gearTexture.width.toFloat()
-        fHeight = gearTexture.height.toFloat()
+            x = windowWidth - gearTexture.width * 0.5f - 96f
+            y = windowHeight - gearTexture.height * 0.5f
+            fWidth = gearTexture.width.toFloat()
+            fHeight = gearTexture.height.toFloat()
 
-        if (gearSprite == null) {
-            gearSprite = LAppSprite(x, y, fWidth, fHeight, gearTexture.id, programId)
-        } else {
-            gearSprite?.resize(x, y, fWidth, fHeight)
-        }
+            if (gearSprite == null) {
+                gearSprite = LAppSprite(x, y, fWidth, fHeight, gearTexture.id, programId)
+            } else {
+                gearSprite?.resize(x, y, fWidth, fHeight)
+            }
 
-        // 加载电源图像
-        val powerTexture = textureManager.createTextureFromPngFile(
-            LAppDefine.ResourcePath.ROOT.path + LAppDefine.ResourcePath.POWER_IMAGE.path
-        )
+            // 加载电源图像
+            val powerTexture = textureManager.createTextureFromPngFile(
+                LAppDefine.ResourcePath.ROOT.path + LAppDefine.ResourcePath.POWER_IMAGE.path
+            )
 
-        x = windowWidth - powerTexture.width * 0.5f - 96.0f
-        y = powerTexture.height * 0.5f
-        fWidth = powerTexture.width.toFloat()
-        fHeight = powerTexture.height.toFloat()
+            x = windowWidth - powerTexture.width * 0.5f - 96.0f
+            y = powerTexture.height * 0.5f
+            fWidth = powerTexture.width.toFloat()
+            fHeight = powerTexture.height.toFloat()
 
-        if (powerSprite == null) {
-            powerSprite = LAppSprite(x, y, fWidth, fHeight, powerTexture.id, programId)
-        } else {
-            powerSprite?.resize(x, y, fWidth, fHeight)
-        }
+            if (powerSprite == null) {
+                powerSprite = LAppSprite(x, y, fWidth, fHeight, powerTexture.id, programId)
+            } else {
+                powerSprite?.resize(x, y, fWidth, fHeight)
+            }
 
-        // 覆盖整个屏幕的尺寸
-        x = windowWidth * 0.5f
-        y = windowHeight * 0.5f
+            // 覆盖整个屏幕的尺寸
+            x = windowWidth * 0.5f
+            y = windowHeight * 0.5f
 
-        if (renderingSprite == null) {
-            renderingSprite = LAppSprite(x, y, windowWidth.toFloat(), windowHeight.toFloat(), 0, programId)
-        } else {
-            renderingSprite?.resize(x, y, windowWidth.toFloat(), windowHeight.toFloat())
+            if (renderingSprite == null) {
+                renderingSprite = LAppSprite(x, y, windowWidth.toFloat(), windowHeight.toFloat(), 0, programId)
+            } else {
+                renderingSprite?.resize(x, y, windowWidth.toFloat(), windowHeight.toFloat())
+            }
+        } catch (e: Exception) {
+            if (LAppDefine.DEBUG_LOG_ENABLE) {
+                LAppPal.printLog("Failed to initialize sprites: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
 

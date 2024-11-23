@@ -88,7 +88,7 @@ class LAppModel : CubismUserModel() {
         delete()
     }
 
-    override fun update() {
+    fun update() {
         val deltaTimeSeconds = LAppPal.getDeltaTime()
         userTimeSeconds += deltaTimeSeconds
 
@@ -231,7 +231,7 @@ class LAppModel : CubismUserModel() {
         return -1
     }
 
-    override fun draw(matrix: CubismMatrix44) {
+    fun draw(matrix: CubismMatrix44) {
         if (model == null) return
 
         CubismMatrix44.multiply(
@@ -395,16 +395,32 @@ class LAppModel : CubismUserModel() {
     }
 
     private fun setupTextures() {
+        val textureManager = LAppDelegate.getInstance().getTextureManager()
+            ?: run {
+                if (LAppDefine.DEBUG_LOG_ENABLE) {
+                    LAppPal.printLog("TextureManager is null")
+                }
+                return
+            }
+
         modelSetting?.let { setting ->
             for (modelTextureNumber in 0 until setting.textureCount) {
                 setting.getTextureFileName(modelTextureNumber).takeIf { it.isNotEmpty() }?.let { texturePath ->
                     val path = modelHomeDirectory + texturePath
-                    val texture = LAppDelegate.getInstance().getTextureManager()
-                        .createTextureFromPngFile(path)
+                    try {
+                        val texture = textureManager.createTextureFromPngFile(path)
 
-                    (getRenderer() as? CubismRendererAndroid)?.apply {
-                        bindTexture(modelTextureNumber, texture.id)
-                        isPremultipliedAlpha(LAppDefine.PREMULTIPLIED_ALPHA_ENABLE)
+                        (getRenderer() as? CubismRendererAndroid)?.apply {
+                            bindTexture(modelTextureNumber, texture.id)
+                            isPremultipliedAlpha(LAppDefine.PREMULTIPLIED_ALPHA_ENABLE)
+                        }
+                    } catch (e: Exception) {
+                        if (LAppDefine.DEBUG_LOG_ENABLE) {
+                            LAppPal.printLog("Failed to load texture: $path")
+                            e.printStackTrace()
+                        } else {
+                            
+                        }
                     }
                 }
             }
@@ -418,5 +434,40 @@ class LAppModel : CubismUserModel() {
             }
             return LAppPal.loadFileAsBytes(path)
         }
+    }
+
+    /**
+     * 设置模型的缩放比例
+     */
+    fun setScale(scale: Float) {
+        if (model == null) return
+        
+        // 获取当前模型矩阵
+        val modelMatrix = getModelMatrix()
+        
+        // 重置矩阵
+        modelMatrix.loadIdentity()
+        
+        // 应用缩放
+        modelMatrix.scale(scale, scale)
+    }
+
+    /**
+     * 设置模型的位置
+     */
+    fun setPosition(x: Float, y: Float) {
+        if (model == null) return
+        
+        val modelMatrix = getModelMatrix()
+        
+        // 设置位置
+        modelMatrix.translate(x, y)
+    }
+
+    /**
+     * 检查当前动作是否已完成
+     */
+    fun isMotionFinished(): Boolean {
+        return motionManager.isFinished()
     }
 } 

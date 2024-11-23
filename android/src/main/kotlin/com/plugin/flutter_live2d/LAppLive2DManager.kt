@@ -212,4 +212,31 @@ class LAppLive2DManager private constructor() {
     fun getModel(number: Int): LAppModel? = models.getOrNull(number)
     fun getCurrentModel(): Int = currentModel
     fun getModelNum(): Int = models.size
+
+    /**
+     * 加载指定目录的模型
+     */
+    fun loadModel(modelDirectoryName: String) {
+        if (LAppDefine.DEBUG_LOG_ENABLE) {
+            LAppPal.printLog("Loading model: $modelDirectoryName")
+        }
+
+        // 释放当前模型
+        releaseAllModel()
+
+        // 构建模型路径
+        val dir = "${LAppDefine.ModelPath.ROOT}$modelDirectoryName/"
+        
+        // 创建并加载新模型
+        val model = LAppModel()
+        model.loadAssets(dir, "$modelDirectoryName${LAppDefine.ModelFile.MODEL_SUFFIX}")
+        models.add(model)
+
+        // 更新当前模型索引
+        currentModel = models.size - 1
+
+        if (LAppDefine.DEBUG_LOG_ENABLE) {
+            LAppPal.printLog("Model loaded: $modelDirectoryName")
+        }
+    }
 } 

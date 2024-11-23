@@ -61,12 +61,12 @@ class LAppDelegate private constructor() {
 
     fun onPause() {
         println("LAppDelegate: Pausing")
-        currentModel = LAppLive2DManager.getInstance(context!!).getCurrentModel()
+        currentModel = LAppLive2DManager.getInstance().getCurrentModel()
     }
 
     fun onStop() {
         println("LAppDelegate: Stopping")
-        view?.dispose()
+        view?.close()
         textureManager = null
         
         LAppLive2DManager.releaseInstance()
@@ -106,7 +106,7 @@ class LAppDelegate private constructor() {
         view?.initializeSprite()
 
         // 加载模型
-        val manager = LAppLive2DManager.getInstance(context!!)
+        val manager = LAppLive2DManager.getInstance()
         if (manager.getCurrentModel() != currentModel) {
             manager.changeScene(currentModel)
         }
