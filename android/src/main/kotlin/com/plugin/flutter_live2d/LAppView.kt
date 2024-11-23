@@ -117,7 +117,7 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
             // var fWidth = backgroundTexture.width * 2.0f
             // var fHeight = windowHeight * 0.95f
 
-            // val programId = spriteShader.getShaderId()
+            val programId = spriteShader.getShaderId()
 
             // if (backSprite == null) {
             //     backSprite = LAppSprite(x, y, fWidth, fHeight, backgroundTexture.id, programId)
