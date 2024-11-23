@@ -38,7 +38,7 @@ object LAppDefine {
         DEFAULT(1.0f),
         /** 最大缩放比例 */
         MAX(2.0f),
-        /** 最小缩放比例 */
+        /** 最小���放比例 */
         MIN(0.8f)
     }
 
@@ -184,14 +184,17 @@ object LAppDefine {
          * 获取完整的资源路径
          */
         fun getFullResourcePath(basePath: String, fileName: String): String {
-            return ensureFlutterAssetsPath("$basePath$fileName")
+            val cleanBasePath = basePath.trimEnd('/')
+            val cleanFileName = fileName.trimStart('/')
+            return ensureFlutterAssetsPath("$cleanBasePath/$cleanFileName")
         }
 
         /**
          * 获取完整的模型路径
          */
         fun getFullModelPath(modelName: String): String {
-            return ensureFlutterAssetsPath("${ModelPath.ROOT}$modelName/")
+            val cleanModelName = modelName.trimStart('/').replace("//", "/")
+            return ensureFlutterAssetsPath("${ModelPath.ROOT}$cleanModelName")
         }
     }
 } 

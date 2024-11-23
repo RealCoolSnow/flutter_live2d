@@ -63,7 +63,7 @@ class LAppModel : CubismUserModel() {
         }
 
         modelHomeDirectory = dir
-        val filePath = modelHomeDirectory + fileName
+        val filePath = dir + fileName
 
         // 读取JSON
         val buffer = createBuffer(filePath)
@@ -374,7 +374,7 @@ class LAppModel : CubismUserModel() {
             for (i in 0 until setting.getMotionCount(group)) {
                 val name = "${group}_$i"
                 setting.getMotionFileName(group, i).takeIf { it.isNotEmpty() }?.let { path ->
-                    val modelPath = modelHomeDirectory + path
+                    val modelPath = LAppDefine.PathUtils.getFullResourcePath(modelHomeDirectory, path)
                     if (debugMode) {
                         LAppPal.printLog("load motion: $path===>[$name]")
                     }
@@ -429,10 +429,11 @@ class LAppModel : CubismUserModel() {
 
     companion object {
         private fun createBuffer(path: String): ByteArray {
+            val fullPath = LAppDefine.PathUtils.ensureFlutterAssetsPath(path)
             if (LAppDefine.DEBUG_LOG_ENABLE) {
-                LAppPal.printLog("create buffer: $path")
+                LAppPal.printLog("create buffer: $fullPath")
             }
-            return LAppPal.loadFileAsBytes(path)
+            return LAppPal.loadFileAsBytes(fullPath)
         }
     }
 

@@ -112,27 +112,33 @@ class LAppLive2DManager private constructor() {
     /**
      * 加载指定目录的模型
      */
-    fun loadModel(modelDirectoryName: String) {
+    fun loadModel(modelPath: String) {
         if (LAppDefine.DEBUG_LOG_ENABLE) {
-            LAppPal.printLog("Loading model: $modelDirectoryName")
+            LAppPal.printLog("Loading model: $modelPath")
         }
 
         // 释放当前模型
         releaseAllModel()
 
-        // 构建模型路径 (已包含 flutter_assets 前缀)
-        val dir = "${LAppDefine.ModelPath.ROOT}$modelDirectoryName/"
+        // 从完整路径中提取目录和文件名
+        val lastSlashIndex = modelPath.lastIndexOf('/')
+        if (lastSlashIndex == -1) {
+            throw IllegalArgumentException("Invalid model path format")
+        }
+
+        val dir = modelPath.substring(0, lastSlashIndex + 1)  // 包含最后的斜杠
+        val fileName = modelPath.substring(lastSlashIndex + 1)
         
         // 创建并加载新模型
         val model = LAppModel()
-        model.loadAssets(dir, "$modelDirectoryName${LAppDefine.ModelFile.MODEL_SUFFIX}")
+        model.loadAssets(dir, fileName)
         models.add(model)
 
         // 更新当前模型索引
         currentModel = models.size - 1
 
         if (LAppDefine.DEBUG_LOG_ENABLE) {
-            LAppPal.printLog("Model loaded: $modelDirectoryName")
+            LAppPal.printLog("Model loaded: $fileName")
         }
     }
 

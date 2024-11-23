@@ -36,8 +36,11 @@ class LAppTextureManager(private val context: Context) {
         }
 
         try {
+            // 确保路径包含 flutter_assets 前缀
+            val fullPath = LAppDefine.PathUtils.ensureFlutterAssetsPath(filePath)
+            
             // 从assets文件夹加载图片并创建位图
-            context.assets.open(filePath).use { stream ->
+            context.assets.open(fullPath).use { stream ->
                 // decodeStream会将图片读取为预乘alpha格式
                 val bitmap = BitmapFactory.decodeStream(stream) ?: throw RuntimeException("Failed to decode bitmap")
 
@@ -81,7 +84,7 @@ class LAppTextureManager(private val context: Context) {
                 bitmap.recycle()
 
                 if (LAppDefine.DEBUG_LOG_ENABLE) {
-                    CubismFramework.coreLogFunction("Created texture: $filePath")
+                    CubismFramework.coreLogFunction("Created texture: $fullPath")
                 }
 
                 return textureInfo
