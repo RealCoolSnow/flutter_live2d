@@ -162,4 +162,36 @@ object LAppDefine {
         const val FAILED_TO_START_MOTION = "Failed to start motion"
         const val FAILED_TO_SET_EXPRESSION = "Failed to set expression"
     }
+
+    /**
+     * 路径处理工具
+     */
+    object PathUtils {
+        private const val FLUTTER_ASSETS_PREFIX = "flutter_assets/"
+
+        /**
+         * 确保路径包含 flutter_assets 前缀
+         */
+        fun ensureFlutterAssetsPath(path: String): String {
+            return if (!path.startsWith(FLUTTER_ASSETS_PREFIX)) {
+                FLUTTER_ASSETS_PREFIX + path
+            } else {
+                path
+            }
+        }
+
+        /**
+         * 获取完整的资源路径
+         */
+        fun getFullResourcePath(basePath: String, fileName: String): String {
+            return ensureFlutterAssetsPath("$basePath$fileName")
+        }
+
+        /**
+         * 获取完整的模型路径
+         */
+        fun getFullModelPath(modelName: String): String {
+            return ensureFlutterAssetsPath("${ModelPath.ROOT}$modelName/")
+        }
+    }
 } 

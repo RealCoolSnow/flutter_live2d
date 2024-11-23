@@ -183,18 +183,9 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
         val maxHeight = LAppDelegate.getInstance().getWindowHeight()
 
         backSprite?.setWindowSize(maxWidth, maxHeight)
-        // gearSprite?.setWindowSize(maxWidth, maxHeight)
-        // powerSprite?.setWindowSize(maxWidth, maxHeight)
 
         // 渲染UI和背景
         backSprite?.render()
-        // gearSprite?.render()
-        // powerSprite?.render()
-
-        if (isChangedModel) {
-            isChangedModel = false
-            LAppLive2DManager.getInstance().nextScene()
-        }
 
         // 渲染模型
         val live2dManager = LAppLive2DManager.getInstance()
@@ -407,7 +398,10 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
             }
 
         try {
-            val backgroundTexture = textureManager.createTextureFromPngFile(imagePath)
+            // 使用 PathUtils 处理路径
+            val fullPath = LAppDefine.PathUtils.ensureFlutterAssetsPath(imagePath)
+
+            val backgroundTexture = textureManager.createTextureFromPngFile(fullPath)
             
             val windowWidth = LAppDelegate.getInstance().getWindowWidth()
             val windowHeight = LAppDelegate.getInstance().getWindowHeight()
@@ -423,16 +417,14 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
             if (backSprite == null) {
                 backSprite = LAppSprite(x, y, fWidth, fHeight, backgroundTexture.id, programId)
             } else {
-                // 更新现有精灵的纹理ID和尺寸
                 backSprite?.apply {
-                    // 假设LAppSprite有更新纹理ID的方法，如果没有需要添加
                     updateTextureId(backgroundTexture.id)
                     resize(x, y, fWidth, fHeight)
                 }
             }
 
             if (LAppDefine.DEBUG_LOG_ENABLE) {
-                LAppPal.printLog("Background image set successfully: $imagePath")
+                LAppPal.printLog("Background image set successfully: $fullPath")
             }
         } catch (e: Exception) {
             if (LAppDefine.DEBUG_LOG_ENABLE) {

@@ -104,11 +104,11 @@ class LAppDelegate private constructor() {
         view?.initialize()
         view?.initializeSprite()
 
-        // 加载模型
-        val manager = LAppLive2DManager.getInstance()
-        if (manager.getCurrentModel() != currentModel) {
-            manager.changeScene(currentModel)
-        }
+        // 不再需要自动加载模型
+        // val manager = LAppLive2DManager.getInstance()
+        // if (manager.getCurrentModel() != currentModel) {
+        //     manager.changeScene(currentModel)
+        // }
 
         isActive = true
     }
