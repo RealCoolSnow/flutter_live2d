@@ -224,7 +224,7 @@ class LAppLive2DManager private constructor() {
         // 释放当前模型
         releaseAllModel()
 
-        // 构建模型路径
+        // 构建模型路径 (已包含 flutter_assets 前缀)
         val dir = "${LAppDefine.ModelPath.ROOT}$modelDirectoryName/"
         
         // 创建并加载新模型

@@ -79,11 +79,11 @@ object LAppDefine {
         /** 着色器目录相对路径 */
         SHADER_ROOT("Shaders"),
         /** 背景图片文件 */
-        BACK_IMAGE("back_class_normal.png"),
+        BACK_IMAGE("flutter_assets/assets/live2d/back_class_normal.png"),
         /** 齿轮图片文件 */
-        GEAR_IMAGE("icon_gear.png"),
+        // GEAR_IMAGE("flutter_assets/assets/live2d/icon_gear.png"),
         /** 电源按钮图片文件 */
-        POWER_IMAGE("close.png"),
+        // POWER_IMAGE("flutter_assets/assets/live2d/close.png"),
         /** 顶点着色器文件 */
         VERT_SHADER("VertSprite.vert"),
         /** 片段着色器文件 */

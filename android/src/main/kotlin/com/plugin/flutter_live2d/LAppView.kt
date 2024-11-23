@@ -28,8 +28,8 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
     private val renderingBuffer = CubismOffscreenSurfaceAndroid()
 
     private var backSprite: LAppSprite? = null
-    private var gearSprite: LAppSprite? = null
-    private var powerSprite: LAppSprite? = null
+    // private var gearSprite: LAppSprite? = null
+    // private var powerSprite: LAppSprite? = null
     private var renderingSprite: LAppSprite? = null
 
     private var isChangedModel = false
@@ -108,7 +108,7 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
         // 加载背景图像
         try {
             val backgroundTexture = textureManager.createTextureFromPngFile(
-                LAppDefine.ResourcePath.ROOT.path + LAppDefine.ResourcePath.BACK_IMAGE.path
+                LAppDefine.ResourcePath.BACK_IMAGE.path
             )
 
             // x,y是图像的中心坐标
@@ -126,36 +126,36 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
             }
 
             // 加载齿轮图像
-            val gearTexture = textureManager.createTextureFromPngFile(
-                LAppDefine.ResourcePath.ROOT.path + LAppDefine.ResourcePath.GEAR_IMAGE.path
-            )
+            // val gearTexture = textureManager.createTextureFromPngFile(
+            //     LAppDefine.ResourcePath.GEAR_IMAGE.path
+            // )
 
-            x = windowWidth - gearTexture.width * 0.5f - 96f
-            y = windowHeight - gearTexture.height * 0.5f
-            fWidth = gearTexture.width.toFloat()
-            fHeight = gearTexture.height.toFloat()
+            // x = windowWidth - gearTexture.width * 0.5f - 96f
+            // y = windowHeight - gearTexture.height * 0.5f
+            // fWidth = gearTexture.width.toFloat()
+            // fHeight = gearTexture.height.toFloat()
 
-            if (gearSprite == null) {
-                gearSprite = LAppSprite(x, y, fWidth, fHeight, gearTexture.id, programId)
-            } else {
-                gearSprite?.resize(x, y, fWidth, fHeight)
-            }
+            // if (gearSprite == null) {
+            //     gearSprite = LAppSprite(x, y, fWidth, fHeight, gearTexture.id, programId)
+            // } else {
+            //     gearSprite?.resize(x, y, fWidth, fHeight)
+            // }
 
             // 加载电源图像
-            val powerTexture = textureManager.createTextureFromPngFile(
-                LAppDefine.ResourcePath.ROOT.path + LAppDefine.ResourcePath.POWER_IMAGE.path
-            )
+            // val powerTexture = textureManager.createTextureFromPngFile(
+            //     LAppDefine.ResourcePath.POWER_IMAGE.path
+            // )
 
-            x = windowWidth - powerTexture.width * 0.5f - 96.0f
-            y = powerTexture.height * 0.5f
-            fWidth = powerTexture.width.toFloat()
-            fHeight = powerTexture.height.toFloat()
+            // x = windowWidth - powerTexture.width * 0.5f - 96.0f
+            // y = powerTexture.height * 0.5f
+            // fWidth = powerTexture.width.toFloat()
+            // fHeight = powerTexture.height.toFloat()
 
-            if (powerSprite == null) {
-                powerSprite = LAppSprite(x, y, fWidth, fHeight, powerTexture.id, programId)
-            } else {
-                powerSprite?.resize(x, y, fWidth, fHeight)
-            }
+            // if (powerSprite == null) {
+            //     powerSprite = LAppSprite(x, y, fWidth, fHeight, powerTexture.id, programId)
+            // } else {
+            //     powerSprite?.resize(x, y, fWidth, fHeight)
+            // }
 
             // 覆盖整个屏幕的尺寸
             x = windowWidth * 0.5f
@@ -183,13 +183,13 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
         val maxHeight = LAppDelegate.getInstance().getWindowHeight()
 
         backSprite?.setWindowSize(maxWidth, maxHeight)
-        gearSprite?.setWindowSize(maxWidth, maxHeight)
-        powerSprite?.setWindowSize(maxWidth, maxHeight)
+        // gearSprite?.setWindowSize(maxWidth, maxHeight)
+        // powerSprite?.setWindowSize(maxWidth, maxHeight)
 
         // 渲染UI和背景
         backSprite?.render()
-        gearSprite?.render()
-        powerSprite?.render()
+        // gearSprite?.render()
+        // powerSprite?.render()
 
         if (isChangedModel) {
             isChangedModel = false
@@ -328,14 +328,14 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
         live2DManager.onTap(x, y)
 
         // 检查是否点击了齿轮按钮
-        if (gearSprite?.isHit(pointX, pointY) == true) {
-            isChangedModel = true
-        }
+        // if (gearSprite?.isHit(pointX, pointY) == true) {
+        //     isChangedModel = true
+        // }
 
         // 检查是否点击了电源按钮
-        if (powerSprite?.isHit(pointX, pointY) == true) {
-            LAppDelegate.getInstance().deactivateApp()
-        }
+        // if (powerSprite?.isHit(pointX, pointY) == true) {
+        //     LAppDelegate.getInstance().deactivateApp()
+        // }
     }
 
     /**
