@@ -1,6 +1,7 @@
 package com.plugin.flutter_live2d
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.opengl.GLES20
 import android.opengl.GLUtils
@@ -36,40 +37,54 @@ class LAppTextureManager(private val context: Context) {
         }
 
         try {
-            // 确保路径包含 flutter_assets 前缀
             val fullPath = LAppDefine.PathUtils.ensureFlutterAssetsPath(filePath)
-            
-            // 从assets文件夹加载图片并创建位图
+            if (LAppDefine.DEBUG_LOG_ENABLE) {
+                LAppPal.printLog("Loading texture from: $fullPath")
+            }
+
             context.assets.open(fullPath).use { stream ->
-                // decodeStream会将图片读取为预乘alpha格式
-                val bitmap = BitmapFactory.decodeStream(stream) ?: throw RuntimeException("Failed to decode bitmap")
+                val options = BitmapFactory.Options().apply {
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                    inScaled = false
+                    inPremultiplied = false  // 添加这行，禁用预乘alpha
+                }
+                
+                val bitmap = BitmapFactory.decodeStream(stream)
+                    ?: throw RuntimeException("Failed to decode bitmap")
 
-                // 激活Texture0
+                if (LAppDefine.DEBUG_LOG_ENABLE) {
+                    LAppPal.printLog("Bitmap decoded: ${bitmap.width}x${bitmap.height}")
+                }
                 GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-
-                // 生成OpenGL纹理
+                // 生成纹理
                 val textureId = IntArray(1)
                 GLES20.glGenTextures(1, textureId, 0)
+                
+                // 检查纹理生成
+                if (textureId[0] == 0) {
+                    val error = GLES20.glGetError()
+                    throw RuntimeException("Failed to generate texture, GL error: $error")
+                }
+
+                // 激活和绑定纹理
+                GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
                 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId[0])
 
-                // 将内存中的2D图像分配给纹理
-                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
+                // 设置纹理参数
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
 
-                // 生成mipmap
-                GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D)
+                // 上传纹理数据
+                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, bitmap, 0)  // 指定 GL_RGBA 格式
 
-                // 设置缩小时的插值
-                GLES20.glTexParameteri(
-                    GLES20.GL_TEXTURE_2D,
-                    GLES20.GL_TEXTURE_MIN_FILTER,
-                    GLES20.GL_LINEAR_MIPMAP_LINEAR
-                )
-                // 设置放大时的插值
-                GLES20.glTexParameteri(
-                    GLES20.GL_TEXTURE_2D,
-                    GLES20.GL_TEXTURE_MAG_FILTER,
-                    GLES20.GL_LINEAR
-                )
+                // 检查纹理上传
+                val uploadError = GLES20.glGetError()
+                if (uploadError != GLES20.GL_NO_ERROR) {
+                    GLES20.glDeleteTextures(1, textureId, 0)
+                    throw RuntimeException("Failed to upload texture data, GL error: $uploadError")
+                }
 
                 val textureInfo = TextureInfo(
                     id = textureId[0],
@@ -78,23 +93,24 @@ class LAppTextureManager(private val context: Context) {
                     filePath = filePath
                 )
 
-                textures.add(textureInfo)
-
                 // 释放位图
                 bitmap.recycle()
 
+                // 添加到纹理列表
+                textures.add(textureInfo)
+
                 if (LAppDefine.DEBUG_LOG_ENABLE) {
-                    CubismFramework.coreLogFunction("Created texture: $fullPath")
+                    LAppPal.printLog("Texture created successfully: ID=${textureInfo.id}")
                 }
 
                 return textureInfo
             }
         } catch (e: Exception) {
             if (LAppDefine.DEBUG_LOG_ENABLE) {
-                CubismFramework.coreLogFunction("Failed to create texture: $filePath")
+                LAppPal.printLog("Failed to create texture: ${e.message}")
                 e.printStackTrace()
             }
-            throw RuntimeException("Failed to create texture: $filePath", e)
+            throw e
         }
     }
 
