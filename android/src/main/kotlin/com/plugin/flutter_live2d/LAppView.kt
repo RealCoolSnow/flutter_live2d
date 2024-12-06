@@ -402,42 +402,56 @@ class LAppView(context: Context) : GLSurfaceView(context), AutoCloseable {
      * 设置背景图片
      */
     fun setBackgroundImage(imagePath: String) {
-        val textureManager = LAppDelegate.getInstance().getTextureManager()
-            ?: run {
-                if (LAppDefine.DEBUG_LOG_ENABLE) {
-                    LAppPal.printLog("TextureManager is null")
-                }
-                return
-            }
+        if (LAppDefine.DEBUG_LOG_ENABLE) {
+            LAppPal.printLog("Setting background image: $imagePath")
+        }
 
         try {
             // 使用 PathUtils 处理路径
             val fullPath = LAppDefine.PathUtils.ensureFlutterAssetsPath(imagePath)
-
-            val backgroundTexture = textureManager.createTextureFromPngFile(fullPath)
             
-            val windowWidth = LAppDelegate.getInstance().getWindowWidth()
-            val windowHeight = LAppDelegate.getInstance().getWindowHeight()
-            
-            // x,y是图像的中心坐标
-            val x = windowWidth * 0.5f
-            val y = windowHeight * 0.5f
-            val fWidth = backgroundTexture.width * 2.0f
-            val fHeight = windowHeight * 0.95f
+            // Since we are a GLSurfaceView, we can use post directly
+            post {
+                try {
+                    val textureManager = LAppDelegate.getInstance().getTextureManager()
+                        ?: run {
+                            if (LAppDefine.DEBUG_LOG_ENABLE) {
+                                LAppPal.printLog("TextureManager is null")
+                            }
+                            return@post
+                        }
 
-            val programId = spriteShader.getShaderId()
+                    val backgroundTexture = textureManager.createTextureFromPngFile(fullPath)
+                    
+                    val windowWidth = LAppDelegate.getInstance().getWindowWidth()
+                    val windowHeight = LAppDelegate.getInstance().getWindowHeight()
+                    
+                    // x,y是图像的中心坐标
+                    val x = windowWidth * 0.5f
+                    val y = windowHeight * 0.5f
+                    val fWidth = backgroundTexture.width * 2.0f
+                    val fHeight = windowHeight * 0.95f
 
-            if (backSprite == null) {
-                backSprite = LAppSprite(x, y, fWidth, fHeight, backgroundTexture.id, programId)
-            } else {
-                backSprite?.apply {
-                    updateTextureId(backgroundTexture.id)
-                    resize(x, y, fWidth, fHeight)
+                    val programId = spriteShader.getShaderId()
+
+                    if (backSprite == null) {
+                        backSprite = LAppSprite(x, y, fWidth, fHeight, backgroundTexture.id, programId)
+                    } else {
+                        backSprite?.apply {
+                            updateTextureId(backgroundTexture.id)
+                            resize(x, y, fWidth, fHeight)
+                        }
+                    }
+
+                    if (LAppDefine.DEBUG_LOG_ENABLE) {
+                        LAppPal.printLog("Background image set successfully: $fullPath")
+                    }
+                } catch (e: Exception) {
+                    if (LAppDefine.DEBUG_LOG_ENABLE) {
+                        LAppPal.printLog("Failed to set background image on GL thread: ${e.message}")
+                    }
+                    throw e
                 }
-            }
-
-            if (LAppDefine.DEBUG_LOG_ENABLE) {
-                LAppPal.printLog("Background image set successfully: $fullPath")
             }
         } catch (e: Exception) {
             if (LAppDefine.DEBUG_LOG_ENABLE) {

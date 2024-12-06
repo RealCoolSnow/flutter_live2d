@@ -88,6 +88,10 @@ class LAppDelegate private constructor() {
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
+        // 启用深度测试
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST)
+        GLES20.glDepthFunc(GLES20.GL_LEQUAL)
+
         // 初始化Cubism SDK
         CubismFramework.initialize()
     }
@@ -118,9 +122,13 @@ class LAppDelegate private constructor() {
         LAppPal.updateTime()
 
         // 清除画面
-        GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)  // 改为透明背景
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
         GLES20.glClearDepthf(1.0f)
+
+        // 启用混合
+        GLES20.glEnable(GLES20.GL_BLEND)
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
         // 渲染
         view?.render()

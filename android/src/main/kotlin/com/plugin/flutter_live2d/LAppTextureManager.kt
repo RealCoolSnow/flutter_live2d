@@ -42,69 +42,109 @@ class LAppTextureManager(private val context: Context) {
                 LAppPal.printLog("Loading texture from: $fullPath")
             }
 
-            context.assets.open(fullPath).use { stream ->
-                val options = BitmapFactory.Options().apply {
-                    inPreferredConfig = Bitmap.Config.ARGB_8888
-                    inScaled = false
-                    inPremultiplied = false  // 添加这行，禁用预乘alpha
-                }
-                
-                val bitmap = BitmapFactory.decodeStream(stream)
-                    ?: throw RuntimeException("Failed to decode bitmap")
-
-                if (LAppDefine.DEBUG_LOG_ENABLE) {
-                    LAppPal.printLog("Bitmap decoded: ${bitmap.width}x${bitmap.height}")
-                }
-                GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-                // 生成纹理
-                val textureId = IntArray(1)
-                GLES20.glGenTextures(1, textureId, 0)
-                
-                // 检查纹理生成
-                if (textureId[0] == 0) {
-                    val error = GLES20.glGetError()
-                    throw RuntimeException("Failed to generate texture, GL error: $error")
-                }
-
-                // 激活和绑定纹理
-                GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId[0])
-
-                // 设置纹理参数
-                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
-                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
-                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
-                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
-
-                // 上传纹理数据
-                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, bitmap, 0)  // 指定 GL_RGBA 格式
-
-                // 检查纹理上传
-                val uploadError = GLES20.glGetError()
-                if (uploadError != GLES20.GL_NO_ERROR) {
-                    GLES20.glDeleteTextures(1, textureId, 0)
-                    throw RuntimeException("Failed to upload texture data, GL error: $uploadError")
-                }
-
-                val textureInfo = TextureInfo(
-                    id = textureId[0],
-                    width = bitmap.width,
-                    height = bitmap.height,
-                    filePath = filePath
-                )
-
-                // 释放位图
-                bitmap.recycle()
-
-                // 添加到纹理列表
-                textures.add(textureInfo)
-
-                if (LAppDefine.DEBUG_LOG_ENABLE) {
-                    LAppPal.printLog("Texture created successfully: ID=${textureInfo.id}")
-                }
-
-                return textureInfo
+            // First decode bounds to check size
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+                inScaled = false
+                inPremultiplied = true
             }
+
+            context.assets.open(fullPath).use { stream ->
+                BitmapFactory.decodeStream(stream, null, options)
+            }
+
+            if (LAppDefine.DEBUG_LOG_ENABLE) {
+                LAppPal.printLog("Texture dimensions: ${options.outWidth}x${options.outHeight}")
+            }
+
+            // Create texture to ensure we have a GL context
+            val textureId = IntArray(1)
+            GLES20.glGenTextures(1, textureId, 0)
+            
+            // Now we can safely check max texture size
+            val maxTextureSize = IntArray(1)
+            GLES20.glGetIntegerv(GLES20.GL_MAX_TEXTURE_SIZE, maxTextureSize, 0)
+            
+            if (LAppDefine.DEBUG_LOG_ENABLE) {
+                LAppPal.printLog("Max texture size: ${maxTextureSize[0]}")
+            }
+
+            // Check if texture is too large
+            if (maxTextureSize[0] > 0 && (options.outWidth > maxTextureSize[0] || options.outHeight > maxTextureSize[0])) {
+                GLES20.glDeleteTextures(1, textureId, 0)
+                throw RuntimeException("Texture size (${options.outWidth}x${options.outHeight}) exceeds maximum supported size (${maxTextureSize[0]})")
+            }
+
+            // Now load the actual bitmap
+            val bitmap = context.assets.open(fullPath).use { stream ->
+                if (LAppDefine.DEBUG_LOG_ENABLE) {
+                    LAppPal.printLog("Loading full texture")
+                }
+                
+                options.inJustDecodeBounds = false
+                BitmapFactory.decodeStream(stream, null, options)
+            } ?: throw RuntimeException("Failed to decode bitmap from stream")
+
+            if (LAppDefine.DEBUG_LOG_ENABLE) {
+                LAppPal.printLog("Bitmap decoded: ${bitmap.width}x${bitmap.height}")
+            }
+
+            // Clear any existing GL errors before proceeding
+            GLES20.glGetError()
+
+            // 激活和绑定纹理
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId[0])
+
+            // Check for errors after binding
+            val bindError = GLES20.glGetError()
+            if (bindError != GLES20.GL_NO_ERROR) {
+                GLES20.glDeleteTextures(1, textureId, 0)
+                throw RuntimeException("Failed to bind texture, GL error: $bindError")
+            }
+
+            // Try with simpler texture parameters first
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+
+            // Check for parameter errors
+            val paramError = GLES20.glGetError()
+            if (paramError != GLES20.GL_NO_ERROR) {
+                GLES20.glDeleteTextures(1, textureId, 0)
+                throw RuntimeException("Failed to set texture parameters, GL error: $paramError")
+            }
+
+            // 上传纹理数据
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
+            
+            // Check for upload errors
+            val uploadError = GLES20.glGetError()
+            if (uploadError != GLES20.GL_NO_ERROR) {
+                GLES20.glDeleteTextures(1, textureId, 0)
+                throw RuntimeException("Failed to upload texture data, GL error: $uploadError")
+            }
+
+            val textureInfo = TextureInfo(
+                id = textureId[0],
+                width = bitmap.width,
+                height = bitmap.height,
+                filePath = filePath
+            )
+
+            // 释放位图
+            bitmap.recycle()
+
+            // 添加到纹理列表
+            textures.add(textureInfo)
+
+            if (LAppDefine.DEBUG_LOG_ENABLE) {
+                LAppPal.printLog("Texture created successfully: ID=${textureInfo.id}")
+            }
+
+            return textureInfo
         } catch (e: Exception) {
             if (LAppDefine.DEBUG_LOG_ENABLE) {
                 LAppPal.printLog("Failed to create texture: ${e.message}")

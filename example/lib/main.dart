@@ -7,7 +7,7 @@ import 'package:flutter_live2d/flutter_live2d.dart';
 
 // 常量定义
 class Live2DAssets {
-  static const String MODEL_PATH = 'assets/live2d/Mao/Mao.model3.json';
+  static const String MODEL_PATH = 'assets/live2d/Hiyori/Hiyori.model3.json';
   static const String BACKGROUND_IMAGE = 'assets/live2d/back_class_normal.png';
 }
 

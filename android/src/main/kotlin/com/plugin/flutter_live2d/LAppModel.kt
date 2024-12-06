@@ -62,8 +62,13 @@ class LAppModel : CubismUserModel() {
             LAppPal.printLog("load model setting: $fileName")
         }
 
-        modelHomeDirectory = dir
-        val filePath = dir + fileName
+        // Ensure the directory has flutter_assets prefix
+        modelHomeDirectory = LAppDefine.PathUtils.ensureFlutterAssetsPath(dir)
+        val filePath = modelHomeDirectory + fileName
+
+        if (LAppDefine.DEBUG_LOG_ENABLE) {
+            LAppPal.printLog("Model file path: $filePath")
+        }
 
         // 读取JSON
         val buffer = createBuffer(filePath)
@@ -406,7 +411,11 @@ class LAppModel : CubismUserModel() {
         modelSetting?.let { setting ->
             for (modelTextureNumber in 0 until setting.textureCount) {
                 setting.getTextureFileName(modelTextureNumber).takeIf { it.isNotEmpty() }?.let { texturePath ->
+                    // The path is already relative to modelHomeDirectory which has flutter_assets prefix
                     val path = modelHomeDirectory + texturePath
+                    if (LAppDefine.DEBUG_LOG_ENABLE) {
+                        LAppPal.printLog("Loading texture: $path")
+                    }
                     try {
                         val texture = textureManager.createTextureFromPngFile(path)
 
@@ -418,9 +427,8 @@ class LAppModel : CubismUserModel() {
                         if (LAppDefine.DEBUG_LOG_ENABLE) {
                             LAppPal.printLog("Failed to load texture: $path")
                             e.printStackTrace()
-                        } else {
-                            
                         }
+                        throw e  // Re-throw the exception after logging
                     }
                 }
             }
